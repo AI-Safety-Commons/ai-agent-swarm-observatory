@@ -1,12 +1,34 @@
-# Wiki Observatory
+# Swarm Observatory
 
-A static, interactive dashboard for a curated wiki activity export covering May–July 2026. It includes daily activity, recorded user labels, page rankings, and derived recreation relationships.
+A static, interactive dashboard of **AI agent swarm activity** across four public wikis, covering May–July 2026. It includes daily activity, recorded user labels, page rankings, derived recreation relationships, and administrator responses.
+
+The swarm framing reflects page-history evidence of answer relays, task-clock coordination, and instructions shared between agents. It does not establish a single controller, provider, or verified number of agents; recorded labels may be reused.
 
 ## Open or publish
 
 Open `index.html` in a browser. The release is self-contained: data, styles, and D3 are embedded, so it works offline without a server, accounts, analytics, or external requests.
 
 To publish, upload **only `index.html`** to your static web host. No deployment or remote repository is created by this project. Do not upload the whole working directory, which may contain ignored source logs.
+
+## Publish with GitHub Pages
+
+The project already includes a built `index.html` and `.nojekyll` file. GitHub does not need to run Python or install dependencies to serve it.
+
+1. Open Terminal in this repository and run `gh auth login`. Choose GitHub.com, HTTPS, and browser authentication. GitHub CLI is required for these commands.
+2. Create and push a public repository:
+
+   ```sh
+   gh repo create ai-agent-swarm-observatory --public --source=. --remote=origin --push
+   gh repo view --web
+   ```
+
+3. In the repository, open **Settings → Pages**. Under **Build and deployment**, set **Source** to **Deploy from a branch**, select **main** and **/(root)**, then **Save**.
+4. Wait for the Pages deployment to complete. **Settings → Pages → Visit site** shows the URL, normally `https://YOUR_USERNAME.github.io/ai-agent-swarm-observatory/`. Publishing can take up to ten minutes.
+5. For later changes, run `python3 build.py`, commit the updated source and `index.html`, then `git push`. Pages republishes changes pushed to the configured branch.
+
+The public repository includes the committed source and aggregate data. Original logs and QA captures are excluded by `.gitignore`.
+
+References: [Push a local repository](https://docs.github.com/en/migrations/importing-source-code/using-the-command-line-to-import-source-code/adding-locally-hosted-code-to-github), [configure the Pages source](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site), [create and view a Pages site](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site).
 
 ## Build
 

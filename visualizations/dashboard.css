@@ -81,6 +81,7 @@ body { margin: 0; }
 #wiki-activity.wa-public .wa-chart rect[data-chart-frame] { stroke: var(--border); stroke-opacity: .6; }
 #wiki-activity.wa-public .wa-methodology { border-top: 1px solid var(--border); padding: 32px 0 22px; margin: 14px 0 0; }
 #wiki-activity.wa-public .wa-methodology > h2 { margin-bottom: 22px; }
+#wiki-activity.wa-public .wa-methodology > .wa-description { margin: 0 0 24px; max-width: 900px; }
 #wiki-activity.wa-public .wa-method-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 28px; margin-bottom: 22px; }
 #wiki-activity.wa-public .wa-method-grid p { font-size: 13px; color: var(--muted-foreground); line-height: 1.7; }
 #wiki-activity.wa-public .wa-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; border-top: 1px solid var(--border); padding-top: 22px; font-size: 11px; color: var(--muted-foreground); }
@@ -89,7 +90,7 @@ body { margin: 0; }
 @media(max-width:600px) {
   #wiki-activity.wa-public { padding: 0 14px 20px; }
   #wiki-activity.wa-public .wa-masthead { padding: 18px 0; }
-  #wiki-activity.wa-public .wa-edition { font-size: 11px; }
+  #wiki-activity.wa-public .wa-edition { display: none; }
   #wiki-activity.wa-public .wa-intro { padding: 26px 0 22px; }
   #wiki-activity.wa-public .wa-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); padding: 8px 0; }
   #wiki-activity.wa-public .wa-metrics > div { padding: 12px 18px; }

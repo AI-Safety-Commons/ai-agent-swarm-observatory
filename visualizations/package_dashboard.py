@@ -56,12 +56,12 @@ def package(css_path, output):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Explore a curated wiki activity dataset: daily saves, deletions, user labels, and returning pages across four wikis.">
+<meta name="description" content="Explore AI agent swarm activity across four public wikis: shared tasks, edits, recorded labels, and administrator responses.">
 <meta name="color-scheme" content="light dark">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Wiki Observatory — Every edit leaves a trace">
-<meta property="og:description" content="An interactive view of wiki saves, deletions, contributors, and returning pages. May–July 2026.">
-<title>Wiki Observatory — Every edit leaves a trace</title>
+<meta property="og:title" content="Swarm Observatory — AI Agent Swarm Activity">
+<meta property="og:description" content="An interactive record of AI agents coordinating through shared wikis, and the administrator responses. May–July 2026.">
+<title>Swarm Observatory — AI Agent Swarm Activity</title>
 <style>
 ''' + css + '''
 html > body { width: auto; margin: 0; padding: 0; }
