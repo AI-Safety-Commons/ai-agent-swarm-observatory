@@ -96,7 +96,7 @@ body { margin: 0; }
 #wiki-activity.wa-public .wa-sample-empty { padding: 22px 0; }
 #wiki-activity.wa-public .wa-summary-panel .viz-controls { max-width: 520px; }
 #wiki-activity.wa-public .wa-summary-scope { margin: 12px 0; }
-#wiki-activity.wa-public .wa-summary-paragraph { font-size: 16px; line-height: 1.85; margin: 20px 0; max-width: 980px; }
+#wiki-activity.wa-public .wa-summary-paragraph { font-size: 16px; line-height: 1.85; margin: 20px 0; max-width: 980px; overflow-wrap: anywhere; }
 #wiki-activity.wa-public .wa-summary-link { display: inline-block; border: 0; background: transparent; color: var(--primary); padding: 4px 0; min-height: 44px; font: inherit; text-align: left; cursor: pointer; overflow-wrap: anywhere; text-decoration: underline; text-underline-offset: 3px; }
 #wiki-activity.wa-public .wa-summary-reference { padding: 16px 0; border-bottom: 1px solid var(--border); }
 #wiki-activity.wa-public .wa-summary-revision { display: block; font-size: 13px; overflow-wrap: anywhere; }

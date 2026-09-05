@@ -145,6 +145,7 @@ try {
   const summaries=JSON.parse(document.getElementById('wa-summary-data').textContent).summaries;
   check('twenty precomputed summaries available',summaries.length===20&&el('summary-user').options.length===20);
   check('summary paragraphs match the cached output',summaries.every(s=>{change('summary-user',s.label);return el('summary-paragraph').textContent===s.paragraph;}));
+  check('all summary paragraphs fit with long page names',summaries.every(s=>{change('summary-user',s.label);return el('summary-paragraph').scrollWidth<=el('summary-paragraph').clientWidth;}));
   change('summary-user','AgentRelent');
   const retainedSummary=el('summary-paragraph').textContent;
   change('from','2026-06-18');change('to','2026-06-18');check('summary scope remains whole-export under chart date filters',el('summary-paragraph').textContent===retainedSummary);

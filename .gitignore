@@ -7,6 +7,7 @@
 /.omx/
 /analysis/summary-pilot/
 /analysis/summary-expansion/
+/analysis/summary-page-review/
 /log-analysis-stats.json
 
 # Generated previews, browser profiles, and verification captures.
