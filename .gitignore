@@ -5,6 +5,8 @@
 *.gz
 *.jsonl
 /.omx/
+/analysis/summary-pilot/
+/analysis/summary-expansion/
 /log-analysis-stats.json
 
 # Generated previews, browser profiles, and verification captures.

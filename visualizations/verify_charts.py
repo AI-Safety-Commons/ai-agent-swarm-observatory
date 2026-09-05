@@ -142,6 +142,32 @@ try {
   const sampleCount=()=>Number(el('sample-results').dataset.matchCount);
   const sampleInput=(id,value)=>{el('sample-'+id).value=value;el('sample-'+id).dispatchEvent(new Event(id==='user'||id==='page'?'input':'change'));};
   check('all saved revision samples load automatically offline',!el('sample-browser').hidden&&sampleCount()===14591);
+  const summaries=JSON.parse(document.getElementById('wa-summary-data').textContent).summaries;
+  check('twenty precomputed summaries available',summaries.length===20&&el('summary-user').options.length===20);
+  check('summary paragraphs match the cached output',summaries.every(s=>{change('summary-user',s.label);return el('summary-paragraph').textContent===s.paragraph;}));
+  change('summary-user','AgentRelent');
+  const retainedSummary=el('summary-paragraph').textContent;
+  change('from','2026-06-18');change('to','2026-06-18');check('summary scope remains whole-export under chart date filters',el('summary-paragraph').textContent===retainedSummary);
+  change('from',d.dates[0]);change('to',d.dates.at(-1));
+  const tableLink=el('users').querySelector('[data-summary-label="AgentRelent"]');
+  check('named table labels link to summaries with usable targets',!!tableLink&&tableLink.getBoundingClientRect().height>=44);
+  change('summary-user','AgentHelperTwo');tableLink.click();check('table label selects its own summary',el('summary-user').value==='AgentRelent'&&el('summary-paragraph').textContent===retainedSummary);
+  check('blank and Other buckets have no summary links',![...el('users').querySelectorAll('[data-summary-label]')].some(n=>n.dataset.summaryLabel==='(blank label)')&&el('other').querySelectorAll('[data-summary-label]').length===0);
+  el('summary-details').open=true;
+  let linkedEvidence=0;
+  for(const summary of summaries){
+    change('summary-user',summary.label);
+    for(let i=0;i<summary.evidence.length;i++){
+      const ref=summary.evidence[i];el('summary-evidence').querySelector(`[data-summary-evidence="${i}"]`).click();
+      for(let n=0;n<20&&!el('summary-status').textContent.startsWith('Opened ');n++)await new Promise(resolve=>setTimeout(resolve,10));
+      const target=[...el('sample-results').querySelectorAll('details')].find(n=>n.dataset.revision===`${ref.page}@${ref.seq}`);
+      if(target&&target.open&&el('sample-user').value===summary.label&&el('sample-page').value===ref.page&&el('sample-from').value===ref.time.slice(0,10)&&el('sample-to').value===ref.time.slice(0,10))linkedEvidence++;
+    }
+  }
+  check('all sixty evidence buttons open the exact revision',linkedEvidence===60);
+  check('summary text rendered as plain text',el('summary-paragraph').children.length===0);
+  check('summary evidence buttons are spaced for touch',spacedButtons(el('summary-evidence').querySelectorAll('button')));
+  change('summary-user','ResearchHelper');el('summary-details').open=false;el('sample-reset').click();
   check('only ten sample records rendered',el('sample-results').querySelectorAll('details').length===10);
   const firstSamples=[...el('sample-results').querySelectorAll('details')].map(n=>n.dataset.revision).join('|');
   el('sample-next').click();check('sample pagination advances',el('sample-page-status').textContent.startsWith('11–20')&&[...el('sample-results').querySelectorAll('details')].map(n=>n.dataset.revision).join('|')!==firstSamples);
@@ -184,7 +210,7 @@ for width, theme in [(360, 'light'), (1024, 'light'), (736, 'light'), (736, 'dar
     path = HERE / f'{name}.html'
     path.write_text(document)
     with tempfile.TemporaryDirectory(prefix='wiki-chart-qa-') as profile:
-        command = [CHROME, '--headless', '--disable-gpu', '--disable-background-networking', '--disable-component-update', '--disable-extensions', '--no-first-run', '--no-default-browser-check', f'--user-data-dir={profile}', '--hide-scrollbars', f'--window-size={width},4800', '--virtual-time-budget=8000', f'--screenshot={HERE / (name + ".png")}', '--dump-dom', path.as_uri()]
+        command = [CHROME, '--headless', '--disable-gpu', '--disable-background-networking', '--disable-component-update', '--disable-extensions', '--no-first-run', '--no-default-browser-check', f'--user-data-dir={profile}', '--hide-scrollbars', f'--window-size={width},5800', '--virtual-time-budget=10000', f'--screenshot={HERE / (name + ".png")}', '--dump-dom', path.as_uri()]
         proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         try:
             stdout, _ = proc.communicate(timeout=15)

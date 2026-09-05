@@ -30,6 +30,31 @@ dictionary = json.dumps([parsed[k] for k in ['wikis', 'labels', 'pages']], ensur
 assert hashlib.sha256(dictionary).hexdigest() == sample_data['dictionarySha256'], 'Regenerate samples after changing chart dictionaries'
 assert fragment.count('__SAMPLE_DATA__') == 1
 fragment = fragment.replace('__SAMPLE_DATA__', samples)
+summary_text = (SOURCE / 'user-summaries.json').read_text(encoding='utf-8')
+summaries = json.loads(summary_text)
+assert summaries['chartSha256'] == hashlib.sha256((SOURCE / 'chart-data.json').read_bytes()).hexdigest(), 'Review summaries after changing chart data'
+named_counts = {}
+named_pages = {}
+for row in parsed['rows']:
+    name = parsed['labels'][row[3]]
+    if row[2] == 0 and name != '(blank label)':
+        named_counts[name] = named_counts.get(name, 0) + row[5]
+        named_pages.setdefault(name, set()).add(row[4])
+expected_top = sorted(named_counts, key=lambda n: (-named_counts[n], n))[:20]
+assert [s['label'] for s in summaries['summaries']] == expected_top
+known_samples = {(parsed['pages'][r[3]], r[4]): r for r in sample_data['rows']}
+for summary in summaries['summaries']:
+    assert summary['saved_revisions'] == named_counts[summary['label']]
+    assert summary['page_count'] == len(named_pages[summary['label']])
+    assert summary['paragraph'].strip() and '\n' not in summary['paragraph']
+    assert len(summary['evidence']) == 3
+    for e in summary['evidence']:
+        record = known_samples[(e['page'], e['seq'])]
+        assert parsed['labels'][record[2]] == summary['label'] and record[0] == e['time']
+for char, escape in [("<", "\\u003c"), (">", "\\u003e"), ("&", "\\u0026")]:
+    summary_text = summary_text.replace(char, escape)
+assert fragment.count('__SUMMARY_DATA__') == 1
+fragment = fragment.replace('__SUMMARY_DATA__', summary_text)
 # Keep the assembled source fragment styled consistently with the public page.
 fragment = "<style>\n" + (SOURCE / "dashboard.css").read_text() + "\n</style>\n" + fragment
 # This is a standalone public page, not an inline visualization fragment.

@@ -1,8 +1,18 @@
 # Swarm Observatory
 
+**[Open the live dashboard](https://minsik-ai.github.io/ai-agent-swarm-observatory/)**
+
 A static, interactive dashboard of **AI agent swarm activity** across four public wikis, covering May–July 2026. It includes daily activity, recorded user labels, page rankings, derived recreation relationships, administrator responses, and a revision sample viewer.
 
 The swarm framing reflects page-history evidence of answer relays, task-clock coordination, and instructions shared between agents. It does not establish a single controller, provider, or verified number of agents; recorded labels may be reused.
+
+## Precomputed activity summaries
+
+The UI includes one paragraph for each of the top 20 **named** labels by saved revisions over the full export. The blank-label bucket is excluded. Select a label in **Precomputed activity summaries**, or click a linked label in the user table. Supporting-revision buttons open the exact revision in the sample viewer, including records beyond its first page of results.
+
+Summaries were generated with `gpt-5.6-sol` at low reasoning effort from complete per-label counts and representative, deduplicated revision excerpts. Inserted/replaced diff text was reviewed to avoid attributing inherited page content to a saving label. Each summary has three source-validated revision references. The summaries are evidence-sampled, not exhaustive, and do not update when chart filters change. Linked public samples are capped at 1,200 characters, so some supporting changes can occur beyond the displayed excerpt.
+
+Reviewed paragraphs and provenance are committed in `visualizations/user-summaries.json`. Normal builds embed these cached results and **never invoke a model**; visitors incur no inference calls. The build checks dataset fingerprints, the top-20 ranking, counts, and all 60 evidence references before publication. `visualizations/build_summaries.py` is an optional packaging step requiring the locally held, ignored research drafts and source logs; it does not generate text itself.
 
 ## Open or publish
 
@@ -63,7 +73,7 @@ The supplied `full-wiki-logs` export was generated on September 3, 2026. Its sto
 
 These populations overlap. Their sum is not a count of unique incidents. User labels are recorded names rather than verified identities. Some timestamps and recreation links use fallback records. Missing records do not prove activity stopped.
 
-The committed aggregate data retains dates, wiki names, recorded user labels, page identifiers, counts, and population metadata. The separate compressed sample bundle additionally includes bounded revision-body excerpts, revision sequence numbers, timing grades, and truncation/redaction flags. It excludes raw diffs, IP metadata fields, request-log URLs, and raw source references. Source links within excerpts remain plain text, with selected credential values redacted.
+The committed aggregate data retains dates, wiki names, recorded user labels, page identifiers, counts, and population metadata. The separate compressed sample bundle additionally includes bounded revision-body excerpts, revision sequence numbers, timing grades, and truncation/redaction flags. The summary bundle contains the reviewed paragraphs and logical revision identifiers for evidence navigation. It excludes raw diffs, IP metadata fields, request-log URLs, and raw source-file locations. Source links within excerpts remain plain text, with selected credential values redacted.
 
 Before truncation, the sample exporter decodes the source bytes and replaces email addresses, valid IP addresses, and selected credential/token patterns in revision text. Pattern matching is not comprehensive anonymization: labels, page identifiers, and the remaining excerpt text are intentionally retained. Short revisions may be shown in full.
 

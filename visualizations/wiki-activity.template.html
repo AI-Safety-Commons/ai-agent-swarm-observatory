@@ -44,8 +44,17 @@
   </section>
     </div>
   </div>
+  <section class="wa-panel wa-summary-panel" aria-labelledby="wa-summary-title">
+    <div class="wa-panel-heading"><div><p class="wa-eyebrow">05 / TOP 20 NAMED LABELS</p><h3 id="wa-summary-title">Precomputed activity summaries</h3></div><span class="wa-panel-tag">AI-generated · Evidence-linked</span></div>
+    <div class="viz-controls"><label class="form-label">Recorded user label<select id="wa-summary-user" class="form-select"></select></label></div>
+    <p class="text-small wa-summary-scope">Full exported history, ranked by saved revisions; the blank-label bucket is excluded. These paragraphs do not change with chart filters.</p>
+    <p id="wa-summary-paragraph" class="wa-summary-paragraph" aria-live="polite"></p>
+    <p class="text-small">Generated with GPT-5.6 Sol at low reasoning effort from sampled revisions and edit changes. Recorded labels are not verified individual agents.</p>
+    <details id="wa-summary-details"><summary>Supporting revisions</summary><p class="text-small">Linked samples show the first 1,200 characters; a supporting change may occur later in a revision.</p><div id="wa-summary-evidence"></div></details>
+    <div id="wa-summary-status" class="text-small" aria-live="polite"></div>
+  </section>
   <section class="wa-panel wa-sample-panel" aria-labelledby="wa-samples-title">
-    <div class="wa-panel-heading"><div><p class="wa-eyebrow">05 / INSIDE THE RECORD</p><h3 id="wa-samples-title">Revision samples</h3></div><span class="wa-panel-tag">14,591 saved revisions</span></div>
+    <div class="wa-panel-heading"><div><p class="wa-eyebrow">06 / INSIDE THE RECORD</p><h3 id="wa-samples-title">Revision samples</h3></div><span class="wa-panel-tag">14,591 saved revisions</span></div>
     <p class="text-small">Read excerpts from individual saved revisions. Sample filters are independent of the charts. Excerpts are limited to 1,200 characters; selected email, IP, and credential patterns are redacted.</p>
     <div class="wa-actions"><button id="wa-sample-load" class="btn" type="button" hidden>Retry loading samples</button><span id="wa-sample-status" class="text-small" aria-live="polite">Preparing revision excerpts…</span></div>
     <div id="wa-sample-error" role="alert" hidden></div>
@@ -94,6 +103,7 @@
 </style>
 <script type="application/json" id="wa-data">__CHART_DATA__</script>
 <script type="application/json" id="wa-sample-data">__SAMPLE_DATA__</script>
+<script type="application/json" id="wa-summary-data">__SUMMARY_DATA__</script>
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script>
 (() => {
@@ -101,6 +111,9 @@
   const q=id=>root.querySelector('#wa-'+id);
   if(!window.d3){q('error').hidden=false;q('error').textContent='Chart library could not load. Please reopen with an internet connection.';return;}
   const D=JSON.parse(document.getElementById('wa-data').textContent), fmt=d3.format(','), pct=d3.format('.1%');
+  const summaryData=JSON.parse(document.getElementById('wa-summary-data').textContent);
+  const summaryByLabel=new Map(summaryData.summaries.map(s=>[s.label,s]));
+  summaryData.summaries.forEach(s=>q('summary-user').add(new Option(`${s.rank}. ${s.label}`,s.label)));
   const types=['Saved revisions','Administrator deletions','Script probes','Recoveries¹'];
   const colors=Array.from({length:6},(_,i)=>`var(--viz-series-${i+1})`);
   const labelOrder=d3.rollups(D.rows,v=>d3.sum(v,r=>r[5]),r=>r[3]).sort((a,b)=>b[1]-a[1]||a[0]-b[0]);
@@ -201,7 +214,7 @@
       .on('pointermove',(event,d)=>tooltip(event,`${d.data.name}: ${fmt(d.data.value)} (${pct(d.data.value/sum)})`)).on('pointerleave',hideTip).on('click',(event,d)=>tooltip(event,`${d.data.name}: ${fmt(d.data.value)} (${pct(d.data.value/sum)})`));
     label(g,0,-3,fmt(sum),'middle');label(g,0,17,'records','middle');
     const named=slices.filter(s=>s.id>=0),pages=Math.ceil(named.length/10);userPage=Math.min(userPage,Math.max(0,pages-1));
-    function tableRow(s,target){const tr=document.createElement('tr'),name=document.createElement('td'),swatch=document.createElement('span');swatch.className='wa-swatch';swatch.style.background=userColor(s.id);name.append(swatch,document.createTextNode(' '+s.name));tr.append(name);for(const v of [fmt(s.value),pct(s.value/sum)]){const td=document.createElement('td');td.className='text-end';td.textContent=v;tr.append(td);}q(target).append(tr);}
+    function tableRow(s,target){const tr=document.createElement('tr'),name=document.createElement('td'),swatch=document.createElement('span');swatch.className='wa-swatch';swatch.style.background=userColor(s.id);name.append(swatch,document.createTextNode(' '));if(summaryByLabel.has(s.name)){const button=document.createElement('button');button.className='wa-summary-link';button.type='button';button.textContent=s.name;button.dataset.summaryLabel=s.name;button.setAttribute('aria-controls','wa-summary-paragraph');button.setAttribute('aria-label',`Read activity summary for ${s.name}`);button.addEventListener('click',()=>{q('summary-user').value=s.name;renderSummary();q('summary-title').scrollIntoView({block:'start'});});name.append(button);}else{name.append(document.createTextNode(s.name));}tr.append(name);for(const v of [fmt(s.value),pct(s.value/sum)]){const td=document.createElement('td');td.className='text-end';td.textContent=v;tr.append(td);}q(target).append(tr);}
     named.slice(userPage*10,(userPage+1)*10).forEach(s=>tableRow(s,'users'));slices.filter(s=>s.id<0).forEach(s=>tableRow(s,'other'));
     q('user-pagination').hidden=pages<=1;q('user-prev').disabled=userPage===0;q('user-next').disabled=userPage>=pages-1;
     q('user-page').textContent=`${userPage*10+1}–${Math.min((userPage+1)*10,named.length)} of ${named.length} labels`;
@@ -242,7 +255,27 @@
   for(const id of ['wiki','from','to','measure','color','user-count','page-count'])q(id).addEventListener('change',()=>{userPage=0;draw();});
   q('user-prev').addEventListener('click',()=>{userPage=Math.max(0,userPage-1);draw();});
   q('user-next').addEventListener('click',()=>{userPage++;draw();});
-  let samples=null,samplePage=0,sampleLoading=false;
+  let samples=null,samplePage=0,sampleLoading=false,sampleLoadPromise=null,summaryEvidenceRequest=0;
+  function renderSummary(){
+    summaryEvidenceRequest++;
+    const s=summaryByLabel.get(q('summary-user').value);q('summary-paragraph').textContent=s.paragraph;q('summary-status').textContent='';q('summary-evidence').replaceChildren();
+    s.evidence.forEach((e,i)=>{
+      const entry=document.createElement('div');entry.className='wa-summary-reference';
+      entry.append(sampleText('strong','wa-summary-revision',e.revision),sampleText('p','text-small',e.reason));
+      const button=document.createElement('button');button.type='button';button.className='btn';button.dataset.summaryEvidence=i;button.textContent=`View revision · ${e.time.slice(0,10)}`;button.addEventListener('click',()=>openSummaryEvidence(s,e));entry.append(button);q('summary-evidence').append(entry);
+    });
+  }
+  async function openSummaryEvidence(summary,evidence){
+    const request=++summaryEvidenceRequest;q('summary-status').textContent='Opening supporting revision…';await loadSamples();if(request!==summaryEvidenceRequest)return;
+    if(!samples){q('summary-status').textContent='Samples could not load. Use the retry button in Revision samples.';return;}
+    const page=D.pages.indexOf(evidence.page),label=D.labels.indexOf(summary.label),date=evidence.time.slice(0,10);
+    q('sample-from').value=date;q('sample-to').value=date;q('sample-wiki').value=String(D.wikis.indexOf(evidence.page.split('/')[0]));q('sample-user').value=summary.label;q('sample-page').value=evidence.page;
+    const matching=samples.rows.filter(r=>r[3]===page&&r[2]===label&&r[0].slice(0,10)===date),index=matching.findIndex(r=>r[4]===evidence.seq);
+    if(index<0){q('summary-status').textContent='This supporting revision is not available in the sample bundle.';return;}
+    samplePage=Math.floor(index/10);renderSamples();
+    const target=[...q('sample-results').querySelectorAll('details')].find(n=>n.dataset.revision===`${evidence.page}@${evidence.seq}`);
+    if(target){target.open=true;target.scrollIntoView({block:'center'});q('summary-status').textContent=`Opened ${evidence.revision} in Revision samples.`;}
+  }
   function sampleText(tag,cls,text){const node=document.createElement(tag);node.className=cls;node.textContent=text;return node;}
   function sampleNameMatch(input,value,exactId,id){return !input||(exactId>=0?id===exactId:value.toLocaleLowerCase().includes(input.toLocaleLowerCase()));}
   function renderSamples(){
@@ -269,7 +302,7 @@
     q('sample-prev').disabled=samplePage===0;q('sample-next').disabled=samplePage>=pages-1;
   }
   function resetSamples(){q('sample-from').value=samples.minDate;q('sample-to').value=samples.maxDate;q('sample-wiki').value='all';q('sample-user').value='';q('sample-page').value='';samplePage=0;renderSamples();}
-  async function loadSamples(){
+  async function loadSamplesImpl(){
     if(sampleLoading||samples)return;sampleLoading=true;q('sample-load').disabled=true;q('sample-status').textContent='Preparing revision excerpts…';q('sample-error').hidden=true;
     try{
       if(!window.DecompressionStream)throw new Error('This browser cannot open the compressed samples. Please use a current Chrome, Firefox, Edge, or Safari.');
@@ -288,6 +321,8 @@
     }catch(error){q('sample-error').hidden=false;q('sample-error').textContent=error.message||'Could not open samples. Please reload the page.';q('sample-status').textContent='Samples have not loaded.';q('sample-load').disabled=false;q('sample-load').hidden=false;}
     finally{sampleLoading=false;}
   }
+  function loadSamples(){if(samples)return Promise.resolve();if(!sampleLoadPromise)sampleLoadPromise=loadSamplesImpl().finally(()=>{sampleLoadPromise=null;});return sampleLoadPromise;}
+  q('summary-user').addEventListener('change',renderSummary);
   q('sample-load').addEventListener('click',loadSamples);
   for(const id of ['sample-from','sample-to','sample-wiki','sample-user','sample-page'])q(id).addEventListener(id.includes('user')||id.endsWith('-page')?'input':'change',()=>{samplePage=0;renderSamples();});
   q('sample-prev').addEventListener('click',()=>{samplePage=Math.max(0,samplePage-1);renderSamples();});
@@ -295,6 +330,7 @@
   q('sample-reset').addEventListener('click',resetSamples);
   let width=0;new ResizeObserver(entries=>{const next=entries[0].contentRect.width;if(Math.abs(width-next)>.5){width=next;draw();}}).observe(root);
   draw();
+  renderSummary();
   requestAnimationFrame(loadSamples);
 })();
 </script>
