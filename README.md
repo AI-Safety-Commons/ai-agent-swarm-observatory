@@ -83,6 +83,12 @@ Before truncation, the sample exporter decodes the source bytes and replaces ema
 
 To regenerate samples from the same source, run `python3 visualizations/build_samples.py` after regenerating chart data, then `python3 build.py`. The build verifies the sample checksum and dictionary fingerprint to prevent mislabeling excerpts with stale indices. Normal builds use the committed sample bundle and do not need source logs.
 
-## Third-party and data rights
-
-D3 7.9.0 is vendored with its copyright notice and license in `visualizations/D3-LICENSE`. No upstream URL or redistribution license for the supplied dataset was included in its manifest; this repository does not grant additional rights to that source data. No project-wide license has been assigned.
+## Cite As
+```
+@misc{swarm_observatory,
+  author = {Minsik Oh},
+  title = {AI Agent Swarm Observatory},
+  year = {2026},
+  url = {https://minsik-ai.github.io/ai-agent-swarm-observatory/},
+}
+```
