@@ -44,6 +44,27 @@
   </section>
     </div>
   </div>
+  <section class="wa-panel wa-sample-panel" aria-labelledby="wa-samples-title">
+    <div class="wa-panel-heading"><div><p class="wa-eyebrow">05 / INSIDE THE RECORD</p><h3 id="wa-samples-title">Revision samples</h3></div><span class="wa-panel-tag">14,591 saved revisions</span></div>
+    <p class="text-small">Read excerpts from individual saved revisions. Sample filters are independent of the charts. Excerpts are limited to 1,200 characters; selected email, IP, and credential patterns are redacted.</p>
+    <div class="wa-actions"><button id="wa-sample-load" class="btn" type="button">Load revision samples</button><span id="wa-sample-status" class="text-small" aria-live="polite">Included in this page · no download or sign-in required</span></div>
+    <div id="wa-sample-error" role="alert" hidden></div>
+    <div id="wa-sample-browser" hidden>
+      <div class="viz-controls">
+        <label class="form-label">From (UTC)<input id="wa-sample-from" class="form-control" type="date"></label>
+        <label class="form-label">Through (UTC)<input id="wa-sample-to" class="form-control" type="date"></label>
+        <label class="form-label">Wiki<select id="wa-sample-wiki" class="form-select"><option value="all">All four wikis</option></select></label>
+      </div>
+      <div class="viz-controls wa-sample-searches">
+        <label class="form-label">User label<input id="wa-sample-user" class="form-control" type="search" list="wa-sample-user-options" placeholder="All labels · type to search"></label>
+        <label class="form-label">Wiki page<input id="wa-sample-page" class="form-control" type="search" list="wa-sample-page-options" placeholder="All pages · type to search"></label>
+      </div>
+      <datalist id="wa-sample-user-options"></datalist><datalist id="wa-sample-page-options"></datalist>
+      <div class="wa-actions"><button id="wa-sample-reset" class="btn" type="button">Reset sample filters</button><span class="text-small">Partial names search broadly; a suggested full name matches exactly.</span></div>
+      <div id="wa-sample-results" aria-label="Matching revision samples"></div>
+      <div id="wa-sample-pagination" class="wa-actions"><button id="wa-sample-prev" class="btn" type="button">Previous samples</button><span id="wa-sample-page-status" class="text-small" aria-live="polite"></span><button id="wa-sample-next" class="btn" type="button">Next samples</button></div>
+    </div>
+  </section>
   <section class="wa-methodology" aria-labelledby="wa-method-title"><p class="wa-eyebrow">READING THE RECORD</p><h2 id="wa-method-title">What the swarm left behind</h2><p class="wa-description">Page histories contain explicit answer relays, task-clock coordination, and instructions for other agents. “Swarm” describes this shared activity; it does not establish a single controller, model provider, or verified number of agents. The charts also include administrator responses.</p><div class="wa-method-grid"><div><h4>A snapshot, not the whole history</h4><p>This curated export was generated on 3 September 2026. Stored saves end on 2 July; deletions extend to 14 July. Missing records do not establish that activity stopped.</p></div><div><h4>Labels are not agent identities</h4><p>Names are recorded preference or actor labels and may be reused. They do not verify a model, operator, or unique agent. “Other” preserves the categories outside the selected ranking.</p></div><div><h4>Keep the populations separate</h4><p>Saves, deletions, probes, and recreation relations describe overlapping activity. Adding them together does not give a count of unique incidents.</p></div></div><p class="text-small">¹Recovery rows are exported as “revert” but represent recoveries without held revisions. They do not identify native revert requests. Probes belong to DSE and have no user or page attribution. Some timestamps and recreation links use fallback records.</p></section>
   <footer class="wa-footer"><span>Swarm Observatory</span><span>Source: supplied full-wiki-logs export · 2026</span><span>Aggregate data · No tracking</span></footer>
   <div class="tooltip wa-tip" role="tooltip" hidden></div>
@@ -72,6 +93,7 @@
 @media(max-width:650px){#wiki-activity .wa-pair{grid-template-columns:minmax(0,1fr)} }
 </style>
 <script type="application/json" id="wa-data">__CHART_DATA__</script>
+<script type="application/json" id="wa-sample-data">__SAMPLE_DATA__</script>
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
 <script>
 (() => {
@@ -220,6 +242,56 @@
   for(const id of ['wiki','from','to','measure','color','user-count','page-count'])q(id).addEventListener('change',()=>{userPage=0;draw();});
   q('user-prev').addEventListener('click',()=>{userPage=Math.max(0,userPage-1);draw();});
   q('user-next').addEventListener('click',()=>{userPage++;draw();});
+  let samples=null,samplePage=0,sampleLoading=false;
+  function sampleText(tag,cls,text){const node=document.createElement(tag);node.className=cls;node.textContent=text;return node;}
+  function sampleNameMatch(input,value,exactId,id){return !input||(exactId>=0?id===exactId:value.toLocaleLowerCase().includes(input.toLocaleLowerCase()));}
+  function renderSamples(){
+    if(!samples)return;
+    const from=q('sample-from').value||samples.minDate,to=q('sample-to').value||samples.maxDate,wiki=q('sample-wiki').value,user=q('sample-user').value.trim(),page=q('sample-page').value.trim();
+    const invalid=from>to;q('sample-error').hidden=!invalid;q('sample-error').textContent=invalid?'The sample start date must be on or before the end date.':'';
+    q('sample-results').replaceChildren();q('sample-results').dataset.matchCount=0;
+    if(invalid){q('sample-status').textContent='Adjust the date range to view samples.';q('sample-page-status').textContent='';q('sample-prev').disabled=true;q('sample-next').disabled=true;return;}
+    const exactUser=D.labels.indexOf(user),exactPage=D.pages.indexOf(page);
+    const found=samples.rows.filter(r=>r[0].slice(0,10)>=from&&r[0].slice(0,10)<=to&&(wiki==='all'||r[1]===Number(wiki))&&sampleNameMatch(user,D.labels[r[2]],exactUser,r[2])&&sampleNameMatch(page,D.pages[r[3]],exactPage,r[3]));
+    const pages=Math.max(1,Math.ceil(found.length/10));samplePage=Math.min(samplePage,pages-1);
+    q('sample-status').textContent=`${fmt(found.length)} of ${fmt(samples.count)} saved revisions match · newest first`;
+    q('sample-results').dataset.matchCount=found.length;
+    if(!found.length)q('sample-results').append(sampleText('p','text-small wa-sample-empty','No saved revisions match these filters. Try a different date, label, or page.'));
+    found.slice(samplePage*10,samplePage*10+10).forEach(r=>{
+      const details=document.createElement('details');details.className='wa-sample-record';details.dataset.revision=`${D.pages[r[3]]}@${r[4]}`;
+      const summary=document.createElement('summary');summary.append(sampleText('span','wa-sample-name',D.pages[r[3]]),sampleText('span','wa-sample-meta',`${r[0].replace('T',' ').replace('Z',' UTC')} · ${D.labels[r[2]]}`));
+      const content=document.createElement('div');content.className='wa-sample-content';
+      content.append(sampleText('p','text-small',`Revision ${r[4]} · Time evidence: ${r[8]}${r[6]?' · Excerpt truncated at 1,200 characters':''}${r[7]?' · Redactions applied':''}`));
+      content.append(sampleText('pre','wa-sample-excerpt',r[5]||'(Empty revision body)'));
+      details.append(summary,content);q('sample-results').append(details);
+    });
+    q('sample-page-status').textContent=found.length?`${fmt(samplePage*10+1)}–${fmt(Math.min(samplePage*10+10,found.length))} of ${fmt(found.length)}`:'0 samples';
+    q('sample-prev').disabled=samplePage===0;q('sample-next').disabled=samplePage>=pages-1;
+  }
+  function resetSamples(){q('sample-from').value=samples.minDate;q('sample-to').value=samples.maxDate;q('sample-wiki').value='all';q('sample-user').value='';q('sample-page').value='';samplePage=0;renderSamples();}
+  q('sample-load').addEventListener('click',async()=>{
+    if(sampleLoading||samples)return;sampleLoading=true;q('sample-load').disabled=true;q('sample-status').textContent='Preparing revision excerpts…';q('sample-error').hidden=true;
+    try{
+      if(!window.DecompressionStream)throw new Error('This browser cannot open the compressed samples. Please use a current Chrome, Firefox, Edge, or Safari.');
+      const packed=JSON.parse(document.getElementById('wa-sample-data').textContent),binary=atob(packed.data),bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
+      const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+      const loaded=JSON.parse(await new Response(stream).text());
+      if(loaded.rows.length!==packed.count)throw new Error('The sample bundle is incomplete. Please reload this page.');
+      samples=loaded;
+      D.wikis.forEach((name,id)=>q('sample-wiki').add(new Option(name,String(id))));
+      for(const [key,index,values] of [['user',2,D.labels],['page',3,D.pages]]){
+        const ids=[...new Set(samples.rows.map(r=>r[index]))].sort((a,b)=>values[a].localeCompare(values[b]));
+        const options=document.createDocumentFragment();ids.forEach(id=>{const option=document.createElement('option');option.value=values[id];options.append(option);});q(`sample-${key}-options`).append(options);
+      }
+      for(const id of ['sample-from','sample-to']){q(id).min=samples.minDate;q(id).max=samples.maxDate;}
+      q('sample-browser').hidden=false;q('sample-load').hidden=true;resetSamples();
+    }catch(error){q('sample-error').hidden=false;q('sample-error').textContent=error.message||'Could not open samples. Please reload the page.';q('sample-status').textContent='Samples have not loaded.';q('sample-load').disabled=false;}
+    finally{sampleLoading=false;}
+  });
+  for(const id of ['sample-from','sample-to','sample-wiki','sample-user','sample-page'])q(id).addEventListener(id.includes('user')||id.endsWith('-page')?'input':'change',()=>{samplePage=0;renderSamples();});
+  q('sample-prev').addEventListener('click',()=>{samplePage=Math.max(0,samplePage-1);renderSamples();});
+  q('sample-next').addEventListener('click',()=>{samplePage++;renderSamples();});
+  q('sample-reset').addEventListener('click',resetSamples);
   let width=0;new ResizeObserver(entries=>{const next=entries[0].contentRect.width;if(Math.abs(width-next)>.5){width=next;draw();}}).observe(root);
   draw();
 })();

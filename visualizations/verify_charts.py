@@ -12,7 +12,7 @@ HERE = Path(__file__).resolve().parent
 CHROME = os.environ.get('CHROME_BIN') or shutil.which('google-chrome') or shutil.which('chromium') or '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 subprocess.run([sys.executable, str(HERE.parent / 'build.py')], check=True)
 fragment = (HERE / 'wiki-activity.html').read_text()
-assert len(fragment.encode()) < 1_000_000
+assert len(fragment.encode()) < 5_000_000
 script = '\n'.join(re.findall(r'<script>(.*?)</script>', fragment, re.S))
 (HERE / 'check-script.js').write_text(script)
 subprocess.run(['node', '--check', str(HERE / 'check-script.js')], check=True)
@@ -29,7 +29,7 @@ function total(type){return [...el('timeline').querySelectorAll(`[data-event-typ
 function computedFill(node){return node&&getComputedStyle(node).fill;}
 function spacedButtons(nodes){const rects=[...nodes].map(n=>n.getBoundingClientRect());return rects.every(r=>r.height>=44)&&rects.every((a,i)=>rects.slice(i+1).every(b=>Math.max(b.left-a.right,a.left-b.right,b.top-a.bottom,a.top-b.bottom)>=7.9));}
 function pieTotal(){return [...el('pie').querySelectorAll('[data-count]')].reduce((n,e)=>n+Number(e.dataset.count),0);}
-setTimeout(()=>{
+setTimeout(async()=>{
 try {
   check('four rendered charts',document.querySelectorAll('.wa-chart').length===4);
   check('all save records',total(0)===14591);
@@ -137,6 +137,39 @@ try {
   check('visible labels >= 11px',[...document.querySelectorAll('.wa-chart text')].every(n=>parseFloat(getComputedStyle(n).fontSize)>=11));
   change('user-count','100');change('color','page');change('page-count','20');
   check('top100 layout has no horizontal overflow',document.getElementById('wiki-activity').scrollWidth<=window.qaWidth);
+  check('samples initially lazy',el('sample-browser').hidden&&el('sample-results').children.length===0);
+  el('sample-load').click();
+  for(let i=0;i<200&&el('sample-browser').hidden&&el('sample-error').hidden;i++)await new Promise(resolve=>setTimeout(resolve,20));
+  const sampleCount=()=>Number(el('sample-results').dataset.matchCount);
+  const sampleInput=(id,value)=>{el('sample-'+id).value=value;el('sample-'+id).dispatchEvent(new Event(id==='user'||id==='page'?'input':'change'));};
+  check('all saved revision samples load offline',!el('sample-browser').hidden&&sampleCount()===14591);
+  check('only ten sample records rendered',el('sample-results').querySelectorAll('details').length===10);
+  const firstSamples=[...el('sample-results').querySelectorAll('details')].map(n=>n.dataset.revision).join('|');
+  el('sample-next').click();check('sample pagination advances',el('sample-page-status').textContent.startsWith('11–20')&&[...el('sample-results').querySelectorAll('details')].map(n=>n.dataset.revision).join('|')!==firstSamples);
+  el('sample-prev').click();check('sample pagination returns',el('sample-page-status').textContent.startsWith('1–10'));
+  sampleInput('from','2026-06-18');sampleInput('to','2026-06-18');check('sample UTC date range includes whole day',sampleCount()===6543);
+  sampleInput('from','2026-06-19');check('invalid sample dates clear results',!el('sample-error').hidden&&sampleCount()===0);
+  el('sample-reset').click();sampleInput('user','AgentRelent');check('sample exact user filter',sampleCount()===317);
+  sampleInput('user','unmatched-user-qa-zzzz');check('empty sample state',sampleCount()===0&&el('sample-results').textContent.includes('No saved revisions'));
+  el('sample-reset').click();
+  sampleInput('wiki',String(d.wikis.indexOf('dorfwiki')));check('sample wiki filter',sampleCount()===6);
+  sampleInput('user','dataresearcheralpha');check('case-insensitive sample user search',sampleCount()===2);
+  sampleInput('page','dorfwiki/AgentDataUSAProbeFebX2');sampleInput('from','2026-06-22');sampleInput('to','2026-06-22');
+  check('combined sample filters intersect',sampleCount()===2);
+  const sampleDetails=el('sample-results').querySelector('details');sampleDetails.open=true;
+  check('sample revision text is readable and inert',el('sample-results').querySelector('pre').textContent.includes('Test links public Data USA research')&&el('sample-results').querySelector('pre').children.length===0);
+  check('sample filtering leaves charts unchanged',total(0)===14591);
+  check('small sample result disables next',el('sample-next').disabled);
+  sampleInput('page','__missing_page_qa__');check('sample page no-match filter',sampleCount()===0);
+  el('sample-reset').click();change('wiki',String(d.wikis.indexOf('probier')));check('chart filtering leaves samples unchanged',sampleCount()===14591);
+  change('wiki','all');
+  check('sample controls have safe spacing',spacedButtons([el('sample-prev'),el('sample-next')]));
+  check('loaded sample layout has no horizontal overflow',document.getElementById('wiki-activity').scrollWidth<=window.qaWidth);
+  check('requested appearance is applied',getComputedStyle(document.documentElement).colorScheme===window.qaTheme);
+  sampleInput('page','dse/TmpJan18HtmlHost987');
+  check('real HTML-bearing sample stays literal',sampleCount()>0&&/<script|<img/i.test(el('sample-results').textContent)&&el('sample-results').querySelectorAll('script,img,iframe').length===0);
+  check('excerpt containers never create child markup',[...el('sample-results').querySelectorAll('pre')].every(n=>n.children.length===0));
+  sampleInput('wiki',String(d.wikis.indexOf('dorfwiki')));sampleInput('page','dorfwiki/AgentDataUSAProbeFebX2');el('sample-results').querySelector('details').open=true;
   check('no runtime errors',!window.qaErrors.length);
 }catch(e){qaResults.push({name:'runtime exception',pass:false,error:String(e)});}
 const report=document.createElement('script');report.id='qa-results';report.type='application/json';report.textContent=JSON.stringify({tests:qaResults,errors:window.qaErrors});document.body.append(report);
@@ -148,11 +181,11 @@ for width, theme in [(360, 'light'), (1024, 'light'), (736, 'light'), (736, 'dar
     if len(sys.argv)>1 and str(width) not in sys.argv[1:]:
         continue
     name = f'qa-{width}-{theme}'
-    document = f'<!doctype html><html data-visualize-standalone lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>{css}\n:root{{color-scheme:{theme};width:{width}px}}body{{width:{width}px}}</style></head><body><script>window.qaWidth={width};window.qaErrors=[];window.onerror=(m)=>window.qaErrors.push(String(m));</script>{qa_fragment}{harness}</body></html>'
+    document = f'<!doctype html><html data-visualize-standalone lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>{css}</style></head><body><script>window.qaWidth={width};window.qaTheme="{theme}";window.qaErrors=[];window.onerror=(m)=>window.qaErrors.push(String(m));</script>{qa_fragment}<style>:root{{color-scheme:{theme};width:{width}px}}body{{width:{width}px}}</style>{harness}</body></html>'
     path = HERE / f'{name}.html'
     path.write_text(document)
     with tempfile.TemporaryDirectory(prefix='wiki-chart-qa-') as profile:
-        command = [CHROME, '--headless', '--disable-gpu', '--disable-background-networking', '--disable-component-update', '--disable-extensions', '--no-first-run', '--no-default-browser-check', f'--user-data-dir={profile}', '--hide-scrollbars', f'--window-size={width},3600', '--virtual-time-budget=2000', f'--screenshot={HERE / (name + ".png")}', '--dump-dom', path.as_uri()]
+        command = [CHROME, '--headless', '--disable-gpu', '--disable-background-networking', '--disable-component-update', '--disable-extensions', '--no-first-run', '--no-default-browser-check', f'--user-data-dir={profile}', '--hide-scrollbars', f'--window-size={width},4800', '--virtual-time-budget=8000', f'--screenshot={HERE / (name + ".png")}', '--dump-dom', path.as_uri()]
         proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         try:
             stdout, _ = proc.communicate(timeout=15)

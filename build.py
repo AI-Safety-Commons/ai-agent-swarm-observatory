@@ -1,5 +1,8 @@
 """Build the public static dashboard from the committed aggregate dataset."""
 import json
+import base64
+import gzip
+import hashlib
 from pathlib import Path
 import shutil
 import subprocess
@@ -17,9 +20,20 @@ for char, escape in [("<", "\\u003c"), (">", "\\u003e"), ("&", "\\u0026")]:
 template = (SOURCE / "wiki-activity.template.html").read_text(encoding="utf-8")
 assert template.count("__CHART_DATA__") == 1
 fragment = template.replace("__CHART_DATA__", data)
-# Keep the original inline preview usable, with the same theme as the public page.
+samples = (SOURCE / "sample-data.json").read_text(encoding="utf-8")
+packed = json.loads(samples)
+raw_samples = gzip.decompress(base64.b64decode(packed['data'], validate=True))
+assert hashlib.sha256(raw_samples).hexdigest() == packed['sha256']
+sample_data = json.loads(raw_samples)
+assert len(sample_data['rows']) == packed['count'] == 14591
+dictionary = json.dumps([parsed[k] for k in ['wikis', 'labels', 'pages']], ensure_ascii=False, separators=(',', ':')).encode()
+assert hashlib.sha256(dictionary).hexdigest() == sample_data['dictionarySha256'], 'Regenerate samples after changing chart dictionaries'
+assert fragment.count('__SAMPLE_DATA__') == 1
+fragment = fragment.replace('__SAMPLE_DATA__', samples)
+# Keep the assembled source fragment styled consistently with the public page.
 fragment = "<style>\n" + (SOURCE / "dashboard.css").read_text() + "\n</style>\n" + fragment
-assert len(fragment.encode("utf-8")) < 1_000_000
+# This is a standalone public page, not an inline visualization fragment.
+assert len(fragment.encode("utf-8")) < 5_000_000
 (SOURCE / "wiki-activity.html").write_text(fragment, encoding="utf-8")
 subprocess.run([sys.executable, str(SOURCE / "package_dashboard.py"), "--output", str(ROOT / "index.html")], check=True)
 shutil.copyfile(ROOT / "index.html", ROOT / "wiki-activity-dashboard.html")

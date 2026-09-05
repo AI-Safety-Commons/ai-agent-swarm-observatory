@@ -1,12 +1,16 @@
 # Swarm Observatory
 
-A static, interactive dashboard of **AI agent swarm activity** across four public wikis, covering May–July 2026. It includes daily activity, recorded user labels, page rankings, derived recreation relationships, and administrator responses.
+A static, interactive dashboard of **AI agent swarm activity** across four public wikis, covering May–July 2026. It includes daily activity, recorded user labels, page rankings, derived recreation relationships, administrator responses, and a revision sample viewer.
 
 The swarm framing reflects page-history evidence of answer relays, task-clock coordination, and instructions shared between agents. It does not establish a single controller, provider, or verified number of agents; recorded labels may be reused.
 
 ## Open or publish
 
 Open `index.html` in a browser. The release is self-contained: data, styles, and D3 are embedded, so it works offline without a server, accounts, analytics, or external requests.
+
+The **Revision samples** panel opens all 14,591 saved revisions with independent date, user-label, wiki, and wiki-page filters. It shows ten records at a time, newest first. Expand a record to read up to 1,200 characters of its text; longer revisions are explicitly marked as truncated. Suggested full names match exactly; partial names use a case-insensitive search. These are saved revisions, not deletion/probe event samples.
+
+Samples are bundled as gzip/base64 data and decompressed on demand using the browser's `DecompressionStream` API. A current Chrome, Firefox, Edge, or Safari is required for the viewer. No sample data is requested from a server. The self-contained release is approximately 2.5 MB.
 
 To publish, upload **only `index.html`** to your static web host. No deployment or remote repository is created by this project. Do not upload the whole working directory, which may contain ignored source logs.
 
@@ -44,6 +48,7 @@ This validates aggregate totals, produces `index.html`, and refreshes the local 
 
 ```sh
 python3 visualizations/verify_charts.py
+python3 visualizations/test_samples.py
 ```
 
 The browser checks require Google Chrome; set `CHROME_BIN` if it is not in the standard macOS location. They verify counts, filters, page/user colors, Top 100 controls, pagination, attribution, and layout across desktop/mobile and light/dark cases. Generated captures and reports are ignored by Git.
@@ -58,9 +63,13 @@ The supplied `full-wiki-logs` export was generated on September 3, 2026. Its sto
 
 These populations overlap. Their sum is not a count of unique incidents. User labels are recorded names rather than verified identities. Some timestamps and recreation links use fallback records. Missing records do not prove activity stopped.
 
-The committed aggregate data retains dates, wiki names, recorded user labels, page identifiers, counts, and population metadata. It excludes revision bodies, diffs, IP fields, request URLs, and raw source references. Labels and page identifiers remain visible; this is not a fully anonymized dataset.
+The committed aggregate data retains dates, wiki names, recorded user labels, page identifiers, counts, and population metadata. The separate compressed sample bundle additionally includes bounded revision-body excerpts, revision sequence numbers, timing grades, and truncation/redaction flags. It excludes raw diffs, IP metadata fields, request-log URLs, and raw source references. Source links within excerpts remain plain text, with selected credential values redacted.
+
+Before truncation, the sample exporter decodes the source bytes and replaces email addresses, valid IP addresses, and selected credential/token patterns in revision text. Pattern matching is not comprehensive anonymization: labels, page identifiers, and the remaining excerpt text are intentionally retained. Short revisions may be shown in full.
 
 `visualizations/build_data.py` can regenerate the aggregate JSON when the original, untracked `full-wiki-logs/` directory is present. The curated aggregate data is committed so the public build remains reproducible without those logs.
+
+To regenerate samples from the same source, run `python3 visualizations/build_samples.py` after regenerating chart data, then `python3 build.py`. The build verifies the sample checksum and dictionary fingerprint to prevent mislabeling excerpts with stale indices. Normal builds use the committed sample bundle and do not need source logs.
 
 ## Third-party and data rights
 
