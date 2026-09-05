@@ -44,17 +44,8 @@
   </section>
     </div>
   </div>
-  <section class="wa-panel wa-summary-panel" aria-labelledby="wa-summary-title">
-    <div class="wa-panel-heading"><div><p class="wa-eyebrow">05 / TOP 20 NAMED LABELS</p><h3 id="wa-summary-title">Precomputed activity summaries</h3></div><span class="wa-panel-tag">AI-generated · Evidence-linked</span></div>
-    <div class="viz-controls"><label class="form-label">Recorded user label<select id="wa-summary-user" class="form-select"></select></label></div>
-    <p class="text-small wa-summary-scope">Full exported history, ranked by saved revisions; the blank-label bucket is excluded. These paragraphs do not change with chart filters.</p>
-    <p id="wa-summary-paragraph" class="wa-summary-paragraph" aria-live="polite"></p>
-    <p class="text-small">Generated with GPT-5.6 Sol at low reasoning effort from sampled revisions and edit changes. Recorded labels are not verified individual agents.</p>
-    <details id="wa-summary-details"><summary>Supporting revisions</summary><p class="text-small">Linked samples show the first 1,200 characters; a supporting change may occur later in a revision.</p><div id="wa-summary-evidence"></div></details>
-    <div id="wa-summary-status" class="text-small" aria-live="polite"></div>
-  </section>
   <section class="wa-panel wa-sample-panel" aria-labelledby="wa-samples-title">
-    <div class="wa-panel-heading"><div><p class="wa-eyebrow">06 / INSIDE THE RECORD</p><h3 id="wa-samples-title">Revision samples</h3></div><span class="wa-panel-tag">14,591 saved revisions</span></div>
+    <div class="wa-panel-heading"><div><p class="wa-eyebrow">05 / INSIDE THE RECORD</p><h3 id="wa-samples-title">Revision samples</h3></div><span class="wa-panel-tag">14,591 saved revisions</span></div>
     <p class="text-small">Read excerpts from individual saved revisions. Sample filters are independent of the charts. Excerpts are limited to 1,200 characters; selected email, IP, and credential patterns are redacted.</p>
     <div class="wa-actions"><button id="wa-sample-load" class="btn" type="button" hidden>Retry loading samples</button><span id="wa-sample-status" class="text-small" aria-live="polite">Preparing revision excerpts…</span></div>
     <div id="wa-sample-error" role="alert" hidden></div>
@@ -75,6 +66,15 @@
     </div>
   </section>
   <section class="wa-methodology" aria-labelledby="wa-method-title"><p class="wa-eyebrow">READING THE RECORD</p><h2 id="wa-method-title">What the swarm left behind</h2><p class="wa-description">Page histories contain explicit answer relays, task-clock coordination, and instructions for other agents. “Swarm” describes this shared activity; it does not establish a single controller, model provider, or verified number of agents. The charts also include administrator responses.</p><div class="wa-method-grid"><div><h4>A snapshot, not the whole history</h4><p>This curated export was generated on 3 September 2026. Stored saves end on 2 July; deletions extend to 14 July. Missing records do not establish that activity stopped.</p></div><div><h4>Labels are not agent identities</h4><p>Names are recorded preference or actor labels and may be reused. They do not verify a model, operator, or unique agent. “Other” preserves the categories outside the selected ranking.</p></div><div><h4>Keep the populations separate</h4><p>Saves, deletions, probes, and recreation relations describe overlapping activity. Adding them together does not give a count of unique incidents.</p></div></div><p class="text-small">¹Recovery rows are exported as “revert” but represent recoveries without held revisions. They do not identify native revert requests. Probes belong to DSE and have no user or page attribution. Some timestamps and recreation links use fallback records.</p></section>
+  <section class="wa-panel wa-summary-panel" aria-labelledby="wa-summary-title">
+    <div class="wa-panel-heading"><div><p class="wa-eyebrow">06 / TOP 20 NAMED LABELS</p><h3 id="wa-summary-title">Precomputed activity summaries</h3></div><span class="wa-panel-tag">AI-generated · Evidence-linked</span></div>
+    <div class="viz-controls"><label class="form-label">Recorded user label<select id="wa-summary-user" class="form-select"></select></label></div>
+    <p class="text-small wa-summary-scope">Full exported history, ranked by saved revisions; the blank-label bucket is excluded. These paragraphs do not change with chart filters.</p>
+    <p id="wa-summary-paragraph" class="wa-summary-paragraph" aria-live="polite"></p>
+    <p class="text-small">Generated with GPT-5.6 Sol at low reasoning effort from sampled revisions and edit changes. Recorded labels are not verified individual agents.</p>
+    <details id="wa-summary-details"><summary>Supporting revisions</summary><p class="text-small">Linked samples show the first 1,200 characters; a supporting change may occur later in a revision.</p><div id="wa-summary-evidence"></div></details>
+    <div id="wa-summary-status" class="text-small" aria-live="polite"></div>
+  </section>
   <footer class="wa-footer"><span>Swarm Observatory</span><span>Source: supplied full-wiki-logs export · 2026</span><span>Aggregate data · No tracking</span></footer>
   <div class="tooltip wa-tip" role="tooltip" hidden></div>
 </div>
