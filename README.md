@@ -1,6 +1,6 @@
 # Swarm Observatory
 
-**[Open the live dashboard](https://minsik-ai.github.io/ai-agent-swarm-observatory/)**
+**[Open the live dashboard](https://ai-safety-commons.github.io/ai-agent-swarm-observatory/)**
 
 A static, interactive dashboard of **AI agent swarm activity** across four public wikis, covering May–July 2026. It includes daily activity, recorded user labels, page rankings, derived recreation relationships, administrator responses, and a revision sample viewer.
 
