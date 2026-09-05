@@ -10,7 +10,7 @@ Open `index.html` in a browser. The release is self-contained: data, styles, and
 
 The **Revision samples** panel opens all 14,591 saved revisions with independent date, user-label, wiki, and wiki-page filters. It shows ten records at a time, newest first. Expand a record to read up to 1,200 characters of its text; longer revisions are explicitly marked as truncated. Suggested full names match exactly; partial names use a case-insensitive search. These are saved revisions, not deletion/probe event samples.
 
-Samples are bundled as gzip/base64 data and decompressed on demand using the browser's `DecompressionStream` API. A current Chrome, Firefox, Edge, or Safari is required for the viewer. No sample data is requested from a server. The self-contained release is approximately 2.5 MB.
+Samples are bundled as gzip/base64 data and decompressed automatically after the dashboard's first paint using the browser's `DecompressionStream` API. No load button is needed; a retry button appears only if loading fails. A current Chrome, Firefox, Edge, or Safari is required for the viewer. No sample data is requested from a server. The self-contained release is approximately 2.5 MB.
 
 To publish, upload **only `index.html`** to your static web host. No deployment or remote repository is created by this project. Do not upload the whole working directory, which may contain ignored source logs.
 

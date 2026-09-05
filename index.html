@@ -301,7 +301,7 @@ body { margin: 0; }
   <section class="wa-panel wa-sample-panel" aria-labelledby="wa-samples-title">
     <div class="wa-panel-heading"><div><p class="wa-eyebrow">05 / INSIDE THE RECORD</p><h3 id="wa-samples-title">Revision samples</h3></div><span class="wa-panel-tag">14,591 saved revisions</span></div>
     <p class="text-small">Read excerpts from individual saved revisions. Sample filters are independent of the charts. Excerpts are limited to 1,200 characters; selected email, IP, and credential patterns are redacted.</p>
-    <div class="wa-actions"><button id="wa-sample-load" class="btn" type="button">Load revision samples</button><span id="wa-sample-status" class="text-small" aria-live="polite">Included in this page · no download or sign-in required</span></div>
+    <div class="wa-actions"><button id="wa-sample-load" class="btn" type="button" hidden>Retry loading samples</button><span id="wa-sample-status" class="text-small" aria-live="polite">Preparing revision excerpts…</span></div>
     <div id="wa-sample-error" role="alert" hidden></div>
     <div id="wa-sample-browser" hidden>
       <div class="viz-controls">
@@ -528,7 +528,7 @@ body { margin: 0; }
     q('sample-prev').disabled=samplePage===0;q('sample-next').disabled=samplePage>=pages-1;
   }
   function resetSamples(){q('sample-from').value=samples.minDate;q('sample-to').value=samples.maxDate;q('sample-wiki').value='all';q('sample-user').value='';q('sample-page').value='';samplePage=0;renderSamples();}
-  q('sample-load').addEventListener('click',async()=>{
+  async function loadSamples(){
     if(sampleLoading||samples)return;sampleLoading=true;q('sample-load').disabled=true;q('sample-status').textContent='Preparing revision excerpts…';q('sample-error').hidden=true;
     try{
       if(!window.DecompressionStream)throw new Error('This browser cannot open the compressed samples. Please use a current Chrome, Firefox, Edge, or Safari.');
@@ -544,15 +544,17 @@ body { margin: 0; }
       }
       for(const id of ['sample-from','sample-to']){q(id).min=samples.minDate;q(id).max=samples.maxDate;}
       q('sample-browser').hidden=false;q('sample-load').hidden=true;resetSamples();
-    }catch(error){q('sample-error').hidden=false;q('sample-error').textContent=error.message||'Could not open samples. Please reload the page.';q('sample-status').textContent='Samples have not loaded.';q('sample-load').disabled=false;}
+    }catch(error){q('sample-error').hidden=false;q('sample-error').textContent=error.message||'Could not open samples. Please reload the page.';q('sample-status').textContent='Samples have not loaded.';q('sample-load').disabled=false;q('sample-load').hidden=false;}
     finally{sampleLoading=false;}
-  });
+  }
+  q('sample-load').addEventListener('click',loadSamples);
   for(const id of ['sample-from','sample-to','sample-wiki','sample-user','sample-page'])q(id).addEventListener(id.includes('user')||id.endsWith('-page')?'input':'change',()=>{samplePage=0;renderSamples();});
   q('sample-prev').addEventListener('click',()=>{samplePage=Math.max(0,samplePage-1);renderSamples();});
   q('sample-next').addEventListener('click',()=>{samplePage++;renderSamples();});
   q('sample-reset').addEventListener('click',resetSamples);
   let width=0;new ResizeObserver(entries=>{const next=entries[0].contentRect.width;if(Math.abs(width-next)>.5){width=next;draw();}}).observe(root);
   draw();
+  requestAnimationFrame(loadSamples);
 })();
 </script>
 

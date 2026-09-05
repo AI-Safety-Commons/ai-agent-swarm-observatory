@@ -137,12 +137,11 @@ try {
   check('visible labels >= 11px',[...document.querySelectorAll('.wa-chart text')].every(n=>parseFloat(getComputedStyle(n).fontSize)>=11));
   change('user-count','100');change('color','page');change('page-count','20');
   check('top100 layout has no horizontal overflow',document.getElementById('wiki-activity').scrollWidth<=window.qaWidth);
-  check('samples initially lazy',el('sample-browser').hidden&&el('sample-results').children.length===0);
-  el('sample-load').click();
+  check('samples do not require a load button',el('sample-load').hidden);
   for(let i=0;i<200&&el('sample-browser').hidden&&el('sample-error').hidden;i++)await new Promise(resolve=>setTimeout(resolve,20));
   const sampleCount=()=>Number(el('sample-results').dataset.matchCount);
   const sampleInput=(id,value)=>{el('sample-'+id).value=value;el('sample-'+id).dispatchEvent(new Event(id==='user'||id==='page'?'input':'change'));};
-  check('all saved revision samples load offline',!el('sample-browser').hidden&&sampleCount()===14591);
+  check('all saved revision samples load automatically offline',!el('sample-browser').hidden&&sampleCount()===14591);
   check('only ten sample records rendered',el('sample-results').querySelectorAll('details').length===10);
   const firstSamples=[...el('sample-results').querySelectorAll('details')].map(n=>n.dataset.revision).join('|');
   el('sample-next').click();check('sample pagination advances',el('sample-page-status').textContent.startsWith('11–20')&&[...el('sample-results').querySelectorAll('details')].map(n=>n.dataset.revision).join('|')!==firstSamples);
