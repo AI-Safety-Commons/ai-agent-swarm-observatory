@@ -1,0 +1,24 @@
+# Source exports stay local; the public site uses only chart-data.json.
+/backup/
+/full-wiki-logs/
+*.zip
+*.gz
+*.jsonl
+/.omx/
+/log-analysis-stats.json
+
+# Generated previews, browser profiles, and verification captures.
+/wiki-activity-dashboard.html
+/visualizations/wiki-activity.html
+/visualizations/preview.html
+/visualizations/qa-*
+/visualizations/check-script.js
+/visualizations/offline-*
+/visualizations/verification.json
+__pycache__/
+*.pyc
+.DS_Store
+.env
+.env.*
+!.env.example
+node_modules/

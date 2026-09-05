@@ -1,0 +1,226 @@
+<div id="wiki-activity" class="wa-public">
+  <header class="wa-masthead"><a class="wa-brand" href="#wiki-activity"><span class="wa-brand-mark" aria-hidden="true">W</span><span>Wiki Observatory</span></a><span class="wa-edition">FIELD NOTES / 2026</span></header>
+  <div class="wa-intro"><div><p class="wa-eyebrow">A CURATED RECORD OF PUBLIC WIKI ACTIVITY</p><h1>Every edit leaves a trace.</h1><p class="wa-description">Explore the saves, deletions, and returning pages across four wikis.</p></div><div class="wa-date-stamp"><span>OBSERVATION WINDOW</span><strong>17 May — 14 July 2026</strong><span>All times in UTC</span></div></div>
+  <div class="wa-metrics" aria-label="Dataset overview"><div><span>Stored revisions</span><strong>14,591</strong></div><div><span>Pages with revisions</span><strong>4,579</strong></div><div><span>Admin deletion events</span><strong>5,217</strong></div><div><span>Wikis represented</span><strong>04</strong></div></div>
+  <section class="wa-filter-panel" aria-label="Dataset filters"><div class="wa-filter-heading"><strong>Explore the dataset</strong><span>Filters apply across charts</span></div>
+  <div class="viz-controls">
+    <label class="form-label">Wiki<select class="form-select" id="wa-wiki"><option value="all">All four wikis</option></select></label>
+    <label class="form-label">From (UTC)<input class="form-control" type="date" id="wa-from"></label>
+    <label class="form-label">Through (UTC)<input class="form-control" type="date" id="wa-to"></label>
+  </div>
+  <div id="wa-status" class="text-small" aria-live="polite"></div>
+  <div id="wa-error" role="alert" hidden></div>
+  </section>
+  <section class="wa-panel wa-timeline-panel" aria-labelledby="wa-time-title">
+    <div class="wa-panel-heading"><div><p class="wa-eyebrow">01 / THE TIMELINE</p><h3 id="wa-time-title">Activity by day</h3></div><span class="wa-panel-tag">Daily · UTC</span></div>
+    <div class="viz-controls"><label class="form-label">Timeline colors<select class="form-select" id="wa-color"><option value="page">By page</option><option value="user">By user label</option><option value="event">By event type</option></select></label><label class="form-label" id="wa-page-count-field">Top pages<select id="wa-page-count" class="form-select"><option value="5">Top 5</option><option value="10">Top 10</option><option value="20" selected>Top 20</option><option value="50">Top 50</option><option value="100">Top 100</option></select></label></div>
+    <div id="wa-series" class="wa-actions" aria-label="Event types"></div>
+    <div id="wa-color-legend" class="wa-color-list text-small" aria-label="Color key"></div>
+    <div id="wa-color-note" class="text-small"></div>
+    <div id="wa-timeline" class="wa-plot"></div>
+    <div id="wa-day" class="text-small" aria-live="polite">Select a day for exact counts.</div>
+    <details><summary>Daily counts and coverage</summary><div class="text-small">Recorded events, not unique incidents. Saves end July 2; deletions extend to July 14. Zero means no matching exported records.</div><table class="table table-sm"><thead><tr><th>Date (UTC)</th><th>Save</th><th>Delete</th><th>Probe</th><th>Recovery¹</th></tr></thead><tbody id="wa-daily"></tbody></table></details>
+  </section>
+  <div class="wa-comparison-heading"><div><p class="wa-eyebrow">LOOK CLOSER</p><h2>Who contributed. What changed.</h2></div><div class="viz-controls"><label class="form-label">Compare labels and pages by<select id="wa-measure" class="form-select"><option value="0">Saved revisions</option><option value="1">Administrator deletions</option><option value="3">Recoveries without held revisions¹</option></select></label></div></div>
+  <div class="wa-pair">
+    <section class="wa-panel" aria-labelledby="wa-users-title">
+      <p class="wa-eyebrow">02 / CONTRIBUTORS</p><h3 id="wa-users-title">Activity by user label</h3>
+      <div class="viz-controls"><label class="form-label">Top user labels<select id="wa-user-count" class="form-select"><option value="5">Top 5</option><option value="10" selected>Top 10</option><option value="20">Top 20</option><option value="50">Top 50</option><option value="100">Top 100</option></select></label></div>
+      <div id="wa-pie" class="wa-plot"></div>
+      <table class="table table-sm"><thead><tr><th>Recorded label</th><th class="text-end">Count</th><th class="text-end">Share</th></tr></thead><tbody id="wa-users"></tbody><tbody id="wa-other"></tbody></table>
+      <div id="wa-user-pagination" hidden><div class="wa-actions"><button id="wa-user-prev" class="btn" type="button">Previous</button><span id="wa-user-page" class="text-small" aria-live="polite"></span><button id="wa-user-next" class="btn" type="button">Next</button></div></div>
+      <div class="text-small">Selected top labels + remainder. Colors stay attached to labels across filters. Labels are not verified people.</div>
+    </section>
+    <div class="wa-right-column"><section class="wa-panel" aria-labelledby="wa-pages-title">
+      <p class="wa-eyebrow">03 / THE PAGES</p><h3 id="wa-pages-title">Busiest pages</h3>
+      <div id="wa-pages" class="wa-plot"></div>
+      <div id="wa-page-detail" class="text-small" aria-live="polite"></div>
+    </section>
+  <section class="wa-panel" aria-labelledby="wa-recreate-title">
+    <div class="wa-panel-heading"><div><p class="wa-eyebrow">04 / RETURNING PAGES</p><h3 id="wa-recreate-title">Repeated recreation after deletion</h3></div><span class="wa-panel-tag">Derived relations</span></div>
+    <div id="wa-recreate" class="wa-plot"></div>
+    <div id="wa-recreate-detail" class="text-small" aria-live="polite"></div>
+    <div class="text-small">Derived first-recreation relations, grouped by linked event date. A revision can represent multiple relations; some revision links use fallback times.</div>
+  </section>
+    </div>
+  </div>
+  <section class="wa-methodology" aria-labelledby="wa-method-title"><p class="wa-eyebrow">READING THE RECORD</p><h2 id="wa-method-title">What these charts can tell us</h2><div class="wa-method-grid"><div><h4>A snapshot, not the whole history</h4><p>This curated export was generated on 3 September 2026. Stored saves end on 2 July; deletions extend to 14 July. Missing records do not establish that activity stopped.</p></div><div><h4>Labels are not people</h4><p>Names are recorded preference or actor labels, not verified identities. “Other” preserves the contribution of categories outside the selected ranking.</p></div><div><h4>Keep the populations separate</h4><p>Saves, deletions, probes, and recreation relations describe overlapping activity. Adding them together does not give a count of unique incidents.</p></div></div><p class="text-small">¹Recovery rows are exported as “revert” but represent recoveries without held revisions. They do not identify native revert requests. Probes belong to DSE and have no user or page attribution. Some timestamps and recreation links use fallback records.</p></section>
+  <footer class="wa-footer"><span>Wiki Observatory</span><span>Source: supplied full-wiki-logs export · 2026</span><span>Aggregate data · No tracking</span></footer>
+  <div class="tooltip wa-tip" role="tooltip" hidden></div>
+</div>
+<style>
+#wiki-activity{position:relative}
+#wiki-activity section{min-width:0;margin-top:20px}
+#wiki-activity .wa-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+#wiki-activity .wa-plot{width:100%;min-width:0}
+#wiki-activity .wa-chart{display:block;max-width:100%;overflow:visible}
+#wiki-activity .wa-chart text{fill:var(--foreground);font-size:12px}
+#wiki-activity .wa-chart .domain,#wiki-activity .wa-chart .tick line{stroke:var(--border)}
+#wiki-activity .wa-chart rect[data-chart-frame]{fill:none;stroke:var(--border)}
+#wiki-activity .wa-legend{border:0;background:transparent;color:var(--foreground);display:inline-flex;gap:8px;align-items:center;min-height:44px;padding:8px 4px;cursor:pointer}
+#wiki-activity .wa-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin:12px 0}
+#wiki-activity .wa-color-list{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;margin:12px 0}
+#wiki-activity .wa-color-list details{width:100%}
+#wiki-activity #wa-user-pagination .btn{min-height:44px}
+#wiki-activity .wa-swatch{display:inline-block;width:10px;height:10px;flex:none}
+#wiki-activity .wa-legend[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
+#wiki-activity .wa-tip{position:absolute;pointer-events:none;z-index:5;background:var(--popover);color:var(--popover-foreground);max-width:280px;padding:8px}
+#wiki-activity .wa-foot{margin-top:24px}
+#wiki-activity .wa-color-key{display:inline-flex;gap:5px;align-items:center;overflow-wrap:anywhere;max-width:100%}
+#wiki-activity td{overflow-wrap:anywhere}
+#wiki-activity summary{cursor:pointer;margin-top:12px}
+@media(max-width:650px){#wiki-activity .wa-pair{grid-template-columns:minmax(0,1fr)} }
+</style>
+<script type="application/json" id="wa-data">__CHART_DATA__</script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script>
+(() => {
+  const root=document.getElementById('wiki-activity');
+  const q=id=>root.querySelector('#wa-'+id);
+  if(!window.d3){q('error').hidden=false;q('error').textContent='Chart library could not load. Please reopen with an internet connection.';return;}
+  const D=JSON.parse(document.getElementById('wa-data').textContent), fmt=d3.format(','), pct=d3.format('.1%');
+  const types=['Saved revisions','Administrator deletions','Script probes','Recoveries¹'];
+  const colors=Array.from({length:6},(_,i)=>`var(--viz-series-${i+1})`);
+  const labelOrder=d3.rollups(D.rows,v=>d3.sum(v,r=>r[5]),r=>r[3]).sort((a,b)=>b[1]-a[1]||a[0]-b[0]);
+  const labelRanks=new Map(labelOrder.map(([id],i)=>[id,i]));
+  // A deterministic hue for each label, independent of filter/rank changes.
+  const userColor=id=>id<0?'var(--muted-foreground)':`light-dark(hsl(${((labelRanks.get(id)||0)*137.508+15)%360} 67% 45%), hsl(${((labelRanks.get(id)||0)*137.508+15)%360} 74% 69%))`;
+  const pageOrder=d3.rollups(D.rows.filter(r=>r[4]>=0),v=>d3.sum(v,r=>r[5]),r=>r[4]).sort((a,b)=>b[1]-a[1]||a[0]-b[0]);
+  const pageRanks=new Map(pageOrder.map(([id],i)=>[id,i]));
+  const pageColor=id=>id===-1?'var(--viz-series-6)':id<0?'var(--muted-foreground)':`light-dark(hsl(${((pageRanks.get(id)||0)*137.508+220)%360} 65% 46%), hsl(${((pageRanks.get(id)||0)*137.508+220)%360} 72% 70%))`;
+  const shown=new Set([0,1]), tip=root.querySelector('.wa-tip');
+  const parse=d3.utcParse('%Y-%m-%d'), dateLabel=d3.utcFormat('%b %d');
+  let selectedDay=null,userPage=0;
+  D.wikis.forEach((w,i)=>q('wiki').add(new Option(w,String(i))));
+  for(const id of ['from','to']){q(id).min=D.dates[0];q(id).max=D.dates.at(-1);}
+  q('from').value=D.dates[0];q('to').value=D.dates.at(-1);
+  types.forEach((name,i)=>{
+    const button=document.createElement('button');button.type='button';button.className='wa-legend';button.dataset.type=i;
+    button.setAttribute('aria-pressed',String(shown.has(i)));
+    const swatch=document.createElement('span');swatch.className='wa-swatch';swatch.style.background=colors[i];
+    button.append(swatch,document.createTextNode(name));q('series').append(button);
+    button.addEventListener('click',()=>{shown.has(i)?shown.delete(i):shown.add(i);button.setAttribute('aria-pressed',String(shown.has(i)));draw();});
+  });
+  function tooltip(event,text){
+    tip.textContent=text;tip.hidden=false;
+    const b=root.getBoundingClientRect();
+    tip.style.left=Math.max(0,Math.min(event.clientX-b.left+10,b.width-tip.offsetWidth))+'px';
+    tip.style.top=Math.max(0,event.clientY-b.top-tip.offsetHeight-10)+'px';
+  }
+  function hideTip(){tip.hidden=true;}
+  function svgFor(id,height){
+    const host=q(id),width=Math.max(260,host.getBoundingClientRect().width);
+    const svg=d3.select(host).selectAll('svg').data([null]).join('svg').attr('class','wa-chart').attr('viewBox',`0 0 ${width} ${height}`).attr('width',width).attr('height',height).attr('role','img');
+    svg.selectAll('*').remove();return {svg,width,height};
+  }
+  function label(svg,x,y,text,anchor='start',cls=''){return svg.append('text').attr('x',x).attr('y',y).attr('text-anchor',anchor).attr('class',cls).text(text);}
+  function empty(svg,width,height,text){svg.attr('aria-label',text);label(svg,width/2,height/2,text,'middle');}
+  function frame(svg,l,t,w,h){svg.append('rect').attr('data-chart-frame','').attr('x',l).attr('y',t).attr('width',w).attr('height',h);}
+  function short(s,n){return s.length>n?s.slice(0,n-1)+'…':s;}
+  function fitLabels(svg){
+    // Drop optional intermediate x ticks if rendered labels would collide.
+    const ticks=svg.selectAll('.wa-x .tick text').nodes();let right=-Infinity;
+    ticks.forEach((n,i)=>{const b=n.getBoundingClientRect();if(i>0&&i<ticks.length-1&&b.left<right+4)n.parentNode.style.display='none';else right=b.right;});
+  }
+  function timeline(rows,days){
+    const {svg,width,height}=svgFor('timeline',310), m={l:68,r:15,t:22,b:60};
+    const active=[...shown].sort(),mode=q('color').value,daily=days.map(day=>({day,values:[0,0,0,0],parts:[new Map(),new Map(),new Map(),new Map()]})),byDay=new Map(daily.map(d=>[d.day,d]));
+    rows.forEach(r=>byDay.get(D.dates[r[0]]).values[r[2]]+=r[5]);
+    const topCount=Number(q('user-count').value),topUsers=d3.rollups(rows.filter(r=>shown.has(r[2])),v=>d3.sum(v,r=>r[5]),r=>r[3]).sort((a,b)=>b[1]-a[1]||a[0]-b[0]).slice(0,topCount).map(d=>d[0]);
+    const topSet=new Set(topUsers),pageCount=Number(q('page-count').value);
+    const topPages=d3.rollups(rows.filter(r=>shown.has(r[2])&&r[4]>=0),v=>d3.sum(v,r=>r[5]),r=>r[4]).sort((a,b)=>b[1]-a[1]||a[0]-b[0]).slice(0,pageCount).map(d=>d[0]),pageSet=new Set(topPages);
+    const category=r=>mode==='event'?r[2]:mode==='page'?(r[4]<0?-1:pageSet.has(r[4])?r[4]:-2):topSet.has(r[3])?r[3]:-1;
+    const categoryName=id=>mode==='event'?types[id]:mode==='page'?(id===-1?'No page attribution':id===-2?'Other pages':D.pages[id]):id<0?'Other labels':D.labels[id];
+    const categoryColor=id=>mode==='event'?colors[id]:mode==='page'?pageColor(id):userColor(id);
+    rows.filter(r=>shown.has(r[2])).forEach(r=>{const parts=byDay.get(D.dates[r[0]]).parts[r[2]],key=category(r);parts.set(key,(parts.get(key)||0)+r[5]);});
+    const categories=mode==='event'?active:mode==='page'?[...topPages,...(rows.some(r=>shown.has(r[2])&&r[4]>=0&&!pageSet.has(r[4]))?[-2]:[]),...(rows.some(r=>shown.has(r[2])&&r[4]<0)?[-1]:[])]:[...topUsers,...(rows.some(r=>shown.has(r[2])&&!topSet.has(r[3]))?[-1]:[])];
+    q('color-legend').replaceChildren();
+    if(mode!=='event'){
+      let target=q('color-legend');
+      if(categories.length>11){const details=document.createElement('details'),summary=document.createElement('summary');summary.textContent=`Color key · ${categories.length} groups`;target=document.createElement('div');target.className='wa-color-list';details.append(summary,target);q('color-legend').append(details);}
+      categories.forEach(id=>{const item=document.createElement('span');item.className='wa-color-key';const s=document.createElement('span');s.className='wa-swatch';s.style.background=categoryColor(id);item.append(s,document.createTextNode(categoryName(id)));target.append(item);});
+    }
+    q('series').querySelectorAll('.wa-swatch').forEach(s=>s.style.display=mode==='event'?'':'none');
+    q('page-count-field').style.display=mode==='page'?'':'none';
+    q('color-note').textContent=mode==='event'?'Separate bars per selected event type.':mode==='page'?`Separate bars per event type; colors show the top ${pageCount} pages + remainder. Page colors stay consistent across filters.`:`Separate bars per event type; colors show the top ${topCount} user labels + remainder.`;
+    const extent=d3.extent(daily.flatMap(d=>active.map(t=>d.values[t])));
+    const ymax=extent[1]||1;
+    const x=d3.scaleBand().domain(days).range([m.l,width-m.r]).padding(.18), sub=d3.scaleBand().domain(active).range([0,x.bandwidth()]).padding(.06);
+    const y=d3.scaleLinear().domain([0,ymax*1.12]).nice().range([height-m.b,m.t]);
+    svg.attr('aria-label',`Daily event counts in UTC. ${active.map(t=>types[t]).join(', ')}. Exact values in daily counts table.`);
+    frame(svg,m.l,m.t,width-m.r-m.l,height-m.b-m.t);
+    svg.append('g').attr('transform',`translate(${m.l},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(d3.format('~s')));
+    const step=Math.max(1,Math.ceil(days.length/(width<440?3:6))),tickDays=days.filter((d,i)=>i%step===0);
+    svg.append('g').attr('class','wa-x').attr('transform',`translate(0,${height-m.b})`).call(d3.axisBottom(x).tickValues(tickDays).tickFormat(d=>dateLabel(parse(d))));
+    label(svg,(m.l+width-m.r)/2,height-10,'Date (UTC)','middle','axis-title').attr('data-axis','x');
+    label(svg,16,(m.t+height-m.b)/2,'Recorded events','middle','axis-title').attr('data-axis','y').attr('transform',`rotate(-90,16,${(m.t+height-m.b)/2})`);
+    daily.forEach(d=>active.forEach(t=>{let bottom=0;categories.forEach(key=>{const count=d.parts[t].get(key)||0;if(!count)return;svg.append('rect').attr('data-event-type',t).attr('data-day',d.day).attr('data-category',categoryName(key)).attr('data-count',count).attr('x',x(d.day)+sub(t)).attr('y',y(bottom+count)).attr('width',sub.bandwidth()).attr('height',y(bottom)-y(bottom+count)).attr('fill',categoryColor(key));bottom+=count;});}));
+    if(!active.length)label(svg,(m.l+width-m.r)/2,120,'Select an event type above','middle');
+    const guide=svg.append('line').attr('data-chart-hover-guide','').attr('y1',m.t).attr('y2',height-m.b).attr('stroke','var(--foreground)').style('display','none');
+    const breakdown=parts=>{const sorted=[...parts].sort((a,b)=>b[1]-a[1]),shownParts=sorted.slice(0,5).map(([k,n])=>`${categoryName(k)} ${fmt(n)}`);if(sorted.length>5)shownParts.push(`+${sorted.length-5} groups: ${fmt(d3.sum(sorted.slice(5),d=>d[1]))}`);return shownParts.join(', ');};
+    const detail=d=>`${d.day} · ${active.map(t=>`${types[t]}: ${fmt(d.values[t])}${mode!=='event'&&d.values[t]?' ('+breakdown(d.parts[t])+')':''}`).join(' · ')}`;
+    svg.append('rect').attr('data-chart-hit','').attr('data-chart-hover-overlay','cross-series').attr('x',m.l).attr('y',m.t).attr('width',width-m.r-m.l).attr('height',height-m.b-m.t).attr('fill','transparent')
+      .on('pointermove',function(event){const px=d3.pointer(event,this)[0],index=Math.max(0,Math.min(daily.length-1,Math.floor((px-m.l)/x.step())));guide.attr('x1',px).attr('x2',px).style('display',null);tooltip(event,detail(daily[index]));})
+      .on('pointerleave',()=>{guide.style('display','none');hideTip();})
+      .on('click',function(event){const px=d3.pointer(event,this)[0];selectedDay=daily[Math.max(0,Math.min(daily.length-1,Math.floor((px-m.l)/x.step())))].day;q('day').textContent=detail(byDay.get(selectedDay));});
+    q('day').textContent=selectedDay&&byDay.has(selectedDay)?detail(byDay.get(selectedDay)):'Select a day for exact counts.';
+    q('daily').replaceChildren();daily.forEach(d=>{const tr=document.createElement('tr');[d.day,...d.values.map(fmt)].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td);});q('daily').append(tr);});
+    fitLabels(svg);
+  }
+  function pie(rows,type){
+    const {svg,width,height}=svgFor('pie',235),totals=d3.rollups(rows.filter(r=>r[2]===type),v=>d3.sum(v,r=>r[5]),r=>r[3]).sort((a,b)=>b[1]-a[1]||d3.ascending(D.labels[a[0]],D.labels[b[0]]));
+    const sum=d3.sum(totals,d=>d[1]);q('users').replaceChildren();q('other').replaceChildren();q('user-pagination').hidden=true;
+    if(!sum){empty(svg,width,height,'No matching activity');return;}
+    const count=Number(q('user-count').value),slices=totals.slice(0,count).map(([id,value])=>({id,name:D.labels[id],value}));
+    if(totals.length>count)slices.push({id:-1,name:`Other (${fmt(totals.length-count)} labels)`,value:d3.sum(totals.slice(count),d=>d[1])});
+    const arc=d3.arc().innerRadius(58).outerRadius(103),g=svg.append('g').attr('transform',`translate(${width/2},112)`);
+    svg.attr('aria-label',`${types[type]} by recorded label. ${fmt(sum)} records; ${fmt(totals.length)} labels. Exact shares in the table.`);
+    g.selectAll('path').data(d3.pie().value(d=>d.value).sort(null)(slices)).join('path').attr('d',arc).attr('fill',d=>userColor(d.data.id)).attr('data-chart-hit','').attr('data-label',d=>d.data.name).attr('data-count',d=>d.data.value)
+      .on('pointermove',(event,d)=>tooltip(event,`${d.data.name}: ${fmt(d.data.value)} (${pct(d.data.value/sum)})`)).on('pointerleave',hideTip).on('click',(event,d)=>tooltip(event,`${d.data.name}: ${fmt(d.data.value)} (${pct(d.data.value/sum)})`));
+    label(g,0,-3,fmt(sum),'middle');label(g,0,17,'records','middle');
+    const named=slices.filter(s=>s.id>=0),pages=Math.ceil(named.length/10);userPage=Math.min(userPage,Math.max(0,pages-1));
+    function tableRow(s,target){const tr=document.createElement('tr'),name=document.createElement('td'),swatch=document.createElement('span');swatch.className='wa-swatch';swatch.style.background=userColor(s.id);name.append(swatch,document.createTextNode(' '+s.name));tr.append(name);for(const v of [fmt(s.value),pct(s.value/sum)]){const td=document.createElement('td');td.className='text-end';td.textContent=v;tr.append(td);}q(target).append(tr);}
+    named.slice(userPage*10,(userPage+1)*10).forEach(s=>tableRow(s,'users'));slices.filter(s=>s.id<0).forEach(s=>tableRow(s,'other'));
+    q('user-pagination').hidden=pages<=1;q('user-prev').disabled=userPage===0;q('user-next').disabled=userPage>=pages-1;
+    q('user-page').textContent=`${userPage*10+1}–${Math.min((userPage+1)*10,named.length)} of ${named.length} labels`;
+  }
+  function ranking(id,items,unit,detailId,color){
+    const top=items.sort((a,b)=>b[1]-a[1]||d3.ascending(D.pages[a[0]],D.pages[b[0]])).slice(0,6),height=top.length?top.length*55+72:190;
+    const {svg,width}=svgFor(id,height),l=68,r=22,t=24,b=44;
+    q(detailId).textContent=`${fmt(d3.sum(items,d=>d[1]))} ${unit} · ${fmt(items.length)} pages`;
+    if(!top.length){empty(svg,width,height,'No matching activity');return;}
+    svg.attr('aria-label',`${unit} by page. `+top.map(([p,n])=>`${D.pages[p]}: ${n}`).join('; '));
+    const max=d3.extent(top,d=>d[1])[1],x=d3.scaleLinear().domain([0,max*1.18]).nice().range([l,width-r]);
+    frame(svg,l,t,width-l-r,height-b-t);
+    svg.append('g').attr('class','wa-x').attr('transform',`translate(0,${height-b})`).call(d3.axisBottom(x).ticks(width<420?3:4).tickFormat(d3.format('~s')));
+    label(svg,(l+width-r)/2,height-8,unit,'middle','axis-title').attr('data-axis','x');
+    label(svg,16,(t+height-b)/2,'Page rank','middle','axis-title').attr('data-axis','y').attr('transform',`rotate(-90,16,${(t+height-b)/2})`);
+    top.forEach(([p,n],i)=>{
+      const yy=t+i*55+5,text=`${D.pages[p]} · ${fmt(n)} ${unit}`;
+      label(svg,l-12,yy+28,String(i+1),'end');
+      label(svg,l+5,yy+9,short(D.pages[p],Math.max(17,Math.floor((width-l-r-10)/7))));
+      svg.append('rect').attr('x',l).attr('y',yy+16).attr('width',x(n)-l).attr('height',18).attr('fill',pageColor(p)).attr('data-page',D.pages[p]).attr('data-count',n);
+      label(svg,Math.min(width-r-3,x(n)+5),yy+30,fmt(n),'start');
+      svg.append('rect').attr('x',l).attr('y',yy-3).attr('width',width-l-r).attr('height',50).attr('fill','transparent').attr('data-chart-hit','')
+        .on('pointermove',event=>tooltip(event,text)).on('pointerleave',hideTip).on('click',()=>{q(detailId).textContent=text;});
+    });fitLabels(svg);
+  }
+  function draw(){
+    hideTip();const from=q('from').value||D.dates[0],to=q('to').value||D.dates.at(-1),wiki=q('wiki').value,type=Number(q('measure').value);
+    const invalid=from>to;q('error').hidden=!invalid;q('error').textContent=invalid?'The start date must be on or before the end date.':'';
+    if(invalid)return;
+    const rows=D.rows.filter(r=>D.dates[r[0]]>=from&&D.dates[r[0]]<=to&&(wiki==='all'||r[1]===Number(wiki)));
+    const days=d3.utcDay.range(parse(from),d3.utcDay.offset(parse(to),1)).map(d3.utcFormat('%Y-%m-%d'));
+    q('status').textContent=`${wiki==='all'?'All wikis':D.wikis[Number(wiki)]} · ${from} – ${to} · ${days.length} days`;
+    timeline(rows,days);pie(rows,type);
+    ranking('pages',d3.rollups(rows.filter(r=>r[2]===type&&r[4]>=0),v=>d3.sum(v,r=>r[5]),r=>r[4]),type===0?'Saved revisions':type===1?'Deletion events':'Recovery events','page-detail',colors[type]);
+    const re=D.recreations.filter(r=>D.dates[r[0]]>=from&&D.dates[r[0]]<=to&&(wiki==='all'||r[1]===Number(wiki)));
+    ranking('recreate',d3.rollups(re,v=>d3.sum(v,r=>r[3]),r=>r[2]),'Recreation relations','recreate-detail',colors[4]);
+  }
+  for(const id of ['wiki','from','to','measure','color','user-count','page-count'])q(id).addEventListener('change',()=>{userPage=0;draw();});
+  q('user-prev').addEventListener('click',()=>{userPage=Math.max(0,userPage-1);draw();});
+  q('user-next').addEventListener('click',()=>{userPage++;draw();});
+  let width=0;new ResizeObserver(entries=>{const next=entries[0].contentRect.width;if(Math.abs(width-next)>.5){width=next;draw();}}).observe(root);
+  draw();
+})();
+</script>
