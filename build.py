@@ -26,6 +26,7 @@ raw_samples = gzip.decompress(base64.b64decode(packed['data'], validate=True))
 assert hashlib.sha256(raw_samples).hexdigest() == packed['sha256']
 sample_data = json.loads(raw_samples)
 assert len(sample_data['rows']) == packed['count'] == 14591
+assert sample_data['textScope'] == 'full-redacted-revision-body' and sample_data['fields'][5] == 'text'
 dictionary = json.dumps([parsed[k] for k in ['wikis', 'labels', 'pages']], ensure_ascii=False, separators=(',', ':')).encode()
 assert hashlib.sha256(dictionary).hexdigest() == sample_data['dictionarySha256'], 'Regenerate samples after changing chart dictionaries'
 assert fragment.count('__SAMPLE_DATA__') == 1

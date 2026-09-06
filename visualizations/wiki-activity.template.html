@@ -46,7 +46,7 @@
   </div>
   <section class="wa-panel wa-sample-panel" aria-labelledby="wa-samples-title">
     <div class="wa-panel-heading"><div><p class="wa-eyebrow">05 / INSIDE THE RECORD</p><h3 id="wa-samples-title">Revision samples</h3></div><span class="wa-panel-tag">14,591 saved revisions</span></div>
-    <p class="text-small">Read excerpts from individual saved revisions. Sample filters are independent of the charts. Excerpts are limited to 1,200 characters; selected email, IP, and credential patterns are redacted.</p>
+    <p class="text-small">Search the full redacted text of saved revisions. Previews show up to 1,200 characters, centered on the first match when searching. Sample filters are independent of the charts.</p>
     <div class="wa-actions"><button id="wa-sample-load" class="btn" type="button" hidden>Retry loading samples</button><span id="wa-sample-status" class="text-small" aria-live="polite">Preparing revision excerpts…</span></div>
     <div id="wa-sample-error" role="alert" hidden></div>
     <div id="wa-sample-browser" hidden>
@@ -59,6 +59,11 @@
         <label class="form-label">User label<input id="wa-sample-user" class="form-control" type="search" list="wa-sample-user-options" placeholder="All labels · type to search"></label>
         <label class="form-label">Wiki page<input id="wa-sample-page" class="form-control" type="search" list="wa-sample-page-options" placeholder="All pages · type to search"></label>
       </div>
+      <div class="viz-controls wa-sample-searches">
+        <label class="form-label">Search messages or URLs<input id="wa-sample-query" class="form-control" type="search" placeholder="Keyword, phrase, or URL" aria-describedby="wa-sample-search-help"></label>
+        <label class="form-label">Sort messages<select id="wa-sample-sort" class="form-select"><option value="newest">Time · newest first</option><option value="oldest">Time · oldest first</option><option value="text-asc">Message text · A–Z</option><option value="text-desc">Message text · Z–A</option><option value="page-asc">Page name · A–Z</option><option value="page-desc">Page name · Z–A</option></select></label>
+      </div>
+      <p id="wa-sample-search-help" class="text-small">Literal, case-insensitive text matching—not fuzzy or regular-expression search. URL-encoded references are also checked in decoded form. Redacted values are not searchable.</p>
       <datalist id="wa-sample-user-options"></datalist><datalist id="wa-sample-page-options"></datalist>
       <div class="wa-actions"><button id="wa-sample-reset" class="btn" type="button">Reset sample filters</button><span class="text-small">Partial names search broadly; a suggested full name matches exactly.</span></div>
       <div id="wa-sample-results" aria-label="Matching revision samples"></div>
@@ -255,7 +260,9 @@
   for(const id of ['wiki','from','to','measure','color','user-count','page-count'])q(id).addEventListener('change',()=>{userPage=0;draw();});
   q('user-prev').addEventListener('click',()=>{userPage=Math.max(0,userPage-1);draw();});
   q('user-next').addEventListener('click',()=>{userPage++;draw();});
-  let samples=null,samplePage=0,sampleLoading=false,sampleLoadPromise=null,summaryEvidenceRequest=0;
+  let samples=null,samplePage=0,sampleLoading=false,sampleLoadPromise=null,summaryEvidenceRequest=0,sampleSearchTimer=null;
+  const sampleSearchCache=new WeakMap(),sampleCollator=new Intl.Collator('en',{numeric:true,sensitivity:'base'});
+  const sampleSortNames={newest:'newest first',oldest:'oldest first','text-asc':'message text A–Z','text-desc':'message text Z–A','page-asc':'page name A–Z','page-desc':'page name Z–A'};
   function renderSummary(){
     summaryEvidenceRequest++;
     const s=summaryByLabel.get(q('summary-user').value);q('summary-paragraph').textContent=s.paragraph;q('summary-status').textContent='';q('summary-evidence').replaceChildren();
@@ -269,6 +276,7 @@
     const request=++summaryEvidenceRequest;q('summary-status').textContent='Opening supporting revision…';await loadSamples();if(request!==summaryEvidenceRequest)return;
     if(!samples){q('summary-status').textContent='Samples could not load. Use the retry button in Revision samples.';return;}
     const page=D.pages.indexOf(evidence.page),label=D.labels.indexOf(summary.label),date=evidence.time.slice(0,10);
+    clearTimeout(sampleSearchTimer);q('sample-query').value='';q('sample-sort').value='newest';
     q('sample-from').value=date;q('sample-to').value=date;q('sample-wiki').value=String(D.wikis.indexOf(evidence.page.split('/')[0]));q('sample-user').value=summary.label;q('sample-page').value=evidence.page;
     const matching=samples.rows.filter(r=>r[3]===page&&r[2]===label&&r[0].slice(0,10)===date),index=matching.findIndex(r=>r[4]===evidence.seq);
     if(index<0){q('summary-status').textContent='This supporting revision is not available in the sample bundle.';return;}
@@ -278,6 +286,26 @@
   }
   function sampleText(tag,cls,text){const node=document.createElement(tag);node.className=cls;node.textContent=text;return node;}
   function sampleNameMatch(input,value,exactId,id){return !input||(exactId>=0?id===exactId:value.toLocaleLowerCase().includes(input.toLocaleLowerCase()));}
+  function sampleSearchForms(r){
+    if(!sampleSearchCache.has(r)){
+      const text=r[5],decoded=text.replace(/(?:%[0-9a-f]{2})+/gi,part=>{try{return decodeURIComponent(part);}catch{return part;}});
+      sampleSearchCache.set(r,{text,lower:text.toLowerCase(),decoded,decodedLower:decoded.toLowerCase()});
+    }
+    return sampleSearchCache.get(r);
+  }
+  function findSampleMatch(r,query){
+    const forms=sampleSearchForms(r),needle=query.toLowerCase(),rawIndex=forms.lower.indexOf(needle);
+    if(rawIndex>=0)return {text:forms.text,index:rawIndex,decoded:false};
+    const decodedIndex=forms.decodedLower.indexOf(needle);
+    return decodedIndex>=0?{text:forms.decoded,index:decodedIndex,decoded:true}:null;
+  }
+  function compareSampleTime(a,b){return b[0].localeCompare(a[0])||b[3]-a[3]||b[4]-a[4];}
+  function compareSamples(a,b,sort){
+    if(sort==='newest')return compareSampleTime(a,b);
+    if(sort==='oldest')return -compareSampleTime(a,b);
+    const isText=sort.startsWith('text-'),left=isText?a[5].trim():D.pages[a[3]],right=isText?b[5].trim():D.pages[b[3]];
+    return sampleCollator.compare(left,right)*(sort.endsWith('desc')?-1:1)||compareSampleTime(a,b);
+  }
   function renderSamples(){
     if(!samples)return;
     const from=q('sample-from').value||samples.minDate,to=q('sample-to').value||samples.maxDate,wiki=q('sample-wiki').value,user=q('sample-user').value.trim(),page=q('sample-page').value.trim();
@@ -285,23 +313,32 @@
     q('sample-results').replaceChildren();q('sample-results').dataset.matchCount=0;
     if(invalid){q('sample-status').textContent='Adjust the date range to view samples.';q('sample-page-status').textContent='';q('sample-prev').disabled=true;q('sample-next').disabled=true;return;}
     const exactUser=D.labels.indexOf(user),exactPage=D.pages.indexOf(page);
-    const found=samples.rows.filter(r=>r[0].slice(0,10)>=from&&r[0].slice(0,10)<=to&&(wiki==='all'||r[1]===Number(wiki))&&sampleNameMatch(user,D.labels[r[2]],exactUser,r[2])&&sampleNameMatch(page,D.pages[r[3]],exactPage,r[3]));
+    const query=q('sample-query').value.trim(),sort=q('sample-sort').value;
+    const found=samples.rows.filter(r=>r[0].slice(0,10)>=from&&r[0].slice(0,10)<=to&&(wiki==='all'||r[1]===Number(wiki))&&sampleNameMatch(user,D.labels[r[2]],exactUser,r[2])&&sampleNameMatch(page,D.pages[r[3]],exactPage,r[3])&&(!query||findSampleMatch(r,query))).sort((a,b)=>compareSamples(a,b,sort));
     const pages=Math.max(1,Math.ceil(found.length/10));samplePage=Math.min(samplePage,pages-1);
-    q('sample-status').textContent=`${fmt(found.length)} of ${fmt(samples.count)} saved revisions match · newest first`;
+    q('sample-status').textContent=`${fmt(found.length)} of ${fmt(samples.count)} saved revisions match · ${sampleSortNames[sort]}`;
     q('sample-results').dataset.matchCount=found.length;
-    if(!found.length)q('sample-results').append(sampleText('p','text-small wa-sample-empty','No saved revisions match these filters. Try a different date, label, or page.'));
+    if(!found.length)q('sample-results').append(sampleText('p','text-small wa-sample-empty','No saved revisions match these filters. Try a different keyword, date, label, or page.'));
     found.slice(samplePage*10,samplePage*10+10).forEach(r=>{
       const details=document.createElement('details');details.className='wa-sample-record';details.dataset.revision=`${D.pages[r[3]]}@${r[4]}`;
       const summary=document.createElement('summary');summary.append(sampleText('span','wa-sample-name',D.pages[r[3]]),sampleText('span','wa-sample-meta',`${r[0].replace('T',' ').replace('Z',' UTC')} · ${D.labels[r[2]]}`));
       const content=document.createElement('div');content.className='wa-sample-content';
-      content.append(sampleText('p','text-small',`Revision ${r[4]} · Time evidence: ${r[8]}${r[6]?' · Excerpt truncated at 1,200 characters':''}${r[7]?' · Redactions applied':''}`));
-      content.append(sampleText('pre','wa-sample-excerpt',r[5]||'(Empty revision body)'));
+      const match=query?findSampleMatch(r,query):null,text=match?match.text:r[5],start=match?Math.max(0,match.index-160):0,end=Math.min(text.length,start+samples.excerptLimit);
+      content.append(sampleText('p','text-small',`Revision ${r[4]} · Time evidence: ${r[8]}${text.length>samples.excerptLimit?' · Preview limited to 1,200 characters':''}${start>0?' · Showing matching context':''}${match&&match.decoded?' · URL-decoded view':''}${r[7]?' · Redactions applied':''}`));
+      const pre=document.createElement('pre');pre.className='wa-sample-excerpt';
+      if(match){
+        pre.append(document.createTextNode((start>0?'…\n':'')+text.slice(start,match.index)));
+        pre.append(sampleText('mark','wa-search-match',text.slice(match.index,Math.min(end,match.index+query.length))));
+        pre.append(document.createTextNode(text.slice(Math.min(end,match.index+query.length),end)+(end<text.length?'\n…':'')));
+        details.open=true;
+      }else pre.textContent=text.slice(0,end)||'(Empty revision body)';
+      content.append(pre);
       details.append(summary,content);q('sample-results').append(details);
     });
     q('sample-page-status').textContent=found.length?`${fmt(samplePage*10+1)}–${fmt(Math.min(samplePage*10+10,found.length))} of ${fmt(found.length)}`:'0 samples';
     q('sample-prev').disabled=samplePage===0;q('sample-next').disabled=samplePage>=pages-1;
   }
-  function resetSamples(){q('sample-from').value=samples.minDate;q('sample-to').value=samples.maxDate;q('sample-wiki').value='all';q('sample-user').value='';q('sample-page').value='';samplePage=0;renderSamples();}
+  function resetSamples(){clearTimeout(sampleSearchTimer);q('sample-from').value=samples.minDate;q('sample-to').value=samples.maxDate;q('sample-wiki').value='all';q('sample-user').value='';q('sample-page').value='';q('sample-query').value='';q('sample-sort').value='newest';samplePage=0;renderSamples();}
   async function loadSamplesImpl(){
     if(sampleLoading||samples)return;sampleLoading=true;q('sample-load').disabled=true;q('sample-status').textContent='Preparing revision excerpts…';q('sample-error').hidden=true;
     try{
@@ -309,7 +346,7 @@
       const packed=JSON.parse(document.getElementById('wa-sample-data').textContent),binary=atob(packed.data),bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
       const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
       const loaded=JSON.parse(await new Response(stream).text());
-      if(loaded.rows.length!==packed.count)throw new Error('The sample bundle is incomplete. Please reload this page.');
+      if(loaded.rows.length!==packed.count||loaded.textScope!=='full-redacted-revision-body')throw new Error('The sample bundle is incomplete or outdated. Please reload this page.');
       samples=loaded;
       D.wikis.forEach((name,id)=>q('sample-wiki').add(new Option(name,String(id))));
       for(const [key,index,values] of [['user',2,D.labels],['page',3,D.pages]]){
@@ -324,7 +361,8 @@
   function loadSamples(){if(samples)return Promise.resolve();if(!sampleLoadPromise)sampleLoadPromise=loadSamplesImpl().finally(()=>{sampleLoadPromise=null;});return sampleLoadPromise;}
   q('summary-user').addEventListener('change',renderSummary);
   q('sample-load').addEventListener('click',loadSamples);
-  for(const id of ['sample-from','sample-to','sample-wiki','sample-user','sample-page'])q(id).addEventListener(id.includes('user')||id.endsWith('-page')?'input':'change',()=>{samplePage=0;renderSamples();});
+  for(const id of ['sample-from','sample-to','sample-wiki','sample-user','sample-page','sample-sort'])q(id).addEventListener(id.includes('user')||id.endsWith('-page')?'input':'change',()=>{clearTimeout(sampleSearchTimer);samplePage=0;renderSamples();});
+  q('sample-query').addEventListener('input',()=>{clearTimeout(sampleSearchTimer);samplePage=0;sampleSearchTimer=setTimeout(renderSamples,150);});
   q('sample-prev').addEventListener('click',()=>{samplePage=Math.max(0,samplePage-1);renderSamples();});
   q('sample-next').addEventListener('click',()=>{samplePage++;renderSamples();});
   q('sample-reset').addEventListener('click',resetSamples);

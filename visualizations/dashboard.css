@@ -94,6 +94,8 @@ body { margin: 0; }
 #wiki-activity.wa-public .wa-sample-content { margin-top: 12px; }
 #wiki-activity.wa-public .wa-sample-excerpt { font: 13px/1.65 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; padding: 16px; border-radius: 8px; background: light-dark(#f2f5fa,#0c1728); color: var(--foreground); margin: 12px 0 0; }
 #wiki-activity.wa-public .wa-sample-empty { padding: 22px 0; }
+#wiki-activity.wa-public #wa-sample-search-help { margin-top: 10px; }
+#wiki-activity.wa-public .wa-search-match { background: light-dark(#fff0a8,#735b12); color: var(--foreground); padding: 0; }
 #wiki-activity.wa-public .wa-summary-panel .viz-controls { max-width: 520px; }
 #wiki-activity.wa-public .wa-summary-scope { margin: 12px 0; }
 #wiki-activity.wa-public .wa-summary-paragraph { font-size: 16px; line-height: 1.85; margin: 20px 0; max-width: 980px; overflow-wrap: anywhere; }
