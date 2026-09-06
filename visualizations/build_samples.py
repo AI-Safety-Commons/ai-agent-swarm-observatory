@@ -1,4 +1,4 @@
-"""Export bounded, redacted revision excerpts, compressed for offline browsing."""
+"""Export redacted revision text for search, with bounded UI previews."""
 import base64
 from collections import Counter
 import gzip
@@ -7,10 +7,11 @@ import ipaddress
 import json
 from pathlib import Path
 import re
+from urllib.parse import unquote
 
 HERE = Path(__file__).resolve().parent
 LIMIT = 1200
-FIELDS = ['time', 'wiki', 'label', 'page', 'seq', 'excerpt', 'truncated', 'redactions', 'timeGrade']
+FIELDS = ['time', 'wiki', 'label', 'page', 'seq', 'text', 'truncated', 'redactions', 'timeGrade']
 EMAIL = re.compile(r'(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b')
 IP = re.compile(r'(?<![\w.])(?:\d{1,3}\.){3}\d{1,3}(?![\w.])|(?<!\w)(?:[a-fA-F0-9]{0,4}:){2,7}[a-fA-F0-9]{0,4}(?!\w)')
 CREDENTIAL = re.compile(r'''(?ix)(\b(?:api[-_]?key|access[-_]?token|refresh[-_]?token|auth[-_]?token|password|passwd|secret|resourcekey)\b["']?\s*(?:=|:|%3d)\s*["']?)([^\s&<>"']+)''')
@@ -35,7 +36,26 @@ def redact(text):
     text, n = CREDENTIAL.subn(lambda m: m.group(1) + '[REDACTED]', text)
     count += n
     text, n = TOKEN.subn('[REDACTED_TOKEN]', text)
-    return text, count + n
+    count += n
+    # Redact values even when their key or value is hidden by URL encoding.
+    decoded = text
+    for _ in range(2):
+        decoded = unquote(decoded)
+        values = set(EMAIL.findall(decoded)) | set(TOKEN.findall(decoded))
+        values.update(m.group(2) for m in CREDENTIAL.finditer(decoded) if not m.group(2).startswith('[REDACTED'))
+        for match in IP.finditer(decoded):
+            try:
+                ipaddress.ip_address(match.group())
+                values.add(match.group())
+            except ValueError:
+                pass
+        for value in sorted(values, key=lambda v: (-len(v), v)):
+            if not value:
+                continue
+            pattern = ''.join(f'(?:{re.escape(chr(b))}|%{b:02x}|%25{b:02x})' for b in value.encode('utf-8'))
+            text, n = re.subn(pattern, '[REDACTED]', text, flags=re.I)
+            count += n
+    return text, count
 
 
 def main():
@@ -49,13 +69,13 @@ def main():
             original = r['body'].encode('latin-1').decode(encoding)
             text, replacements = redact(original)
             truncated = len(text) > LIMIT
-            rows.append([r['time'], wiki_ids[r['wiki']], label_ids[r['label'] or '(blank label)'], page_ids[r['page_id']], r['seq'], text[:LIMIT], truncated, replacements, r['time_grade']])
+            rows.append([r['time'], wiki_ids[r['wiki']], label_ids[r['label'] or '(blank label)'], page_ids[r['page_id']], r['seq'], text, truncated, replacements, r['time_grade']])
             redacted_rows += bool(replacements)
             truncated_rows += truncated
     rows.sort(key=lambda r: (r[0], r[3], r[4]), reverse=True)
     assert len(rows) == len({(r[3], r[4]) for r in rows}) == 14591
     assert Counter(chart['wikis'][r[1]] for r in rows) == {'dse': 13403, 'probier': 1013, 'fractal': 169, 'dorfwiki': 6}
-    payload = {'fields': FIELDS, 'rows': rows, 'count': len(rows), 'excerptLimit': LIMIT,
+    payload = {'fields': FIELDS, 'rows': rows, 'count': len(rows), 'excerptLimit': LIMIT, 'textScope': 'full-redacted-revision-body',
                'minDate': min(r[0][:10] for r in rows), 'maxDate': max(r[0][:10] for r in rows),
                'redactedRevisions': redacted_rows, 'truncatedRevisions': truncated_rows,
                'dictionarySha256': hashlib.sha256(json.dumps([chart[k] for k in ['wikis', 'labels', 'pages']], ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()}

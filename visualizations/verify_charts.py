@@ -6,6 +6,10 @@ import tempfile
 import sys
 import os
 import shutil
+import base64
+import gzip
+from collections import Counter
+from urllib.parse import unquote
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -19,8 +23,30 @@ subprocess.run(['node', '--check', str(HERE / 'check-script.js')], check=True)
 css = (HERE / 'dashboard.css').read_text()
 d3 = (HERE / 'd3-7.9.0.min.js').read_text()
 qa_fragment = fragment.replace('<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>', '<script>' + d3 + '</script>')
+chart = json.loads((HERE / 'chart-data.json').read_text())
+sample_pack = json.loads((HERE / 'sample-data.json').read_text())
+sample_rows = json.loads(gzip.decompress(base64.b64decode(sample_pack['data'])))['rows']
+groups = Counter((r[1], r[2], r[3], r[0][:10]) for r in sample_rows)
+fixtures = {}
+url_query = 'https://www.sec.gov/files/county.json'
+for row in sample_rows:
+    if groups[(row[1], row[2], row[3], row[0][:10])] > 10:
+        continue
+    def fixture(query):
+        return {'query': query, 'wiki': row[1], 'user': chart['labels'][row[2]], 'page': chart['pages'][row[3]], 'date': row[0][:10], 'revision': f"{chart['pages'][row[3]]}@{row[4]}"}
+    if 'encoded' not in fixtures and url_query not in row[5].lower() and url_query in unquote(row[5]).lower():
+        fixtures['encoded'] = fixture(url_query)
+    if 'late' not in fixtures:
+        for match in re.finditer(r'\b[A-Z][A-Za-z0-9]{17,}\b', row[5]):
+            if match.start() > 1400 and row[5].lower().find(match.group().lower()) == match.start():
+                fixtures['late'] = fixture(match.group())
+                break
+    if len(fixtures) == 2:
+        break
+assert len(fixtures) == 2, 'Missing real late-text or encoded-URL fixtures'
 harness = r'''
 <script>
+const searchFixtures=__SEARCH_FIXTURES__;
 const qaResults=[];
 function check(name,value){qaResults.push({name,pass:!!value});}
 const el=id=>document.getElementById('wa-'+id);
@@ -195,13 +221,46 @@ try {
   sampleInput('page','dse/TmpJan18HtmlHost987');
   check('real HTML-bearing sample stays literal',sampleCount()>0&&/<script|<img/i.test(el('sample-results').textContent)&&el('sample-results').querySelectorAll('script,img,iframe').length===0);
   check('excerpt containers never create child markup',[...el('sample-results').querySelectorAll('pre')].every(n=>n.children.length===0));
+  const messageQuery=async value=>{el('sample-query').value=value;el('sample-query').dispatchEvent(new Event('input'));await new Promise(resolve=>setTimeout(resolve,180));};
+  el('sample-reset').click();
+  sampleInput('wiki',String(d.wikis.indexOf('dorfwiki')));sampleInput('user','DataResearcherAlpha');sampleInput('page','dorfwiki/AgentDataUSAProbeFebX2');sampleInput('from','2026-06-22');sampleInput('to','2026-06-22');
+  await messageQuery('TEST LINKS PUBLIC DATA USA RESEARCH');check('literal phrase search combines with all four filters',sampleCount()===1&&el('sample-results').querySelector('mark').textContent==='Test links public Data USA research');
+  await messageQuery('[definitely-not-regex.*]');check('search treats regex punctuation literally',sampleCount()===0);
+  await messageQuery('api.datausa.io/tesseract');check('URL fragment search',sampleCount()===1);
+  for(const kind of ['late','encoded']){
+    el('sample-reset').click();const f=searchFixtures[kind];sampleInput('wiki',String(f.wiki));sampleInput('user',f.user);sampleInput('page',f.page);sampleInput('from',f.date);sampleInput('to',f.date);await messageQuery(f.query);
+    const target=[...el('sample-results').querySelectorAll('details')].find(n=>n.dataset.revision===f.revision);
+    check(`${kind} match finds real source revision`,!!target&&target.open&&target.querySelector('mark').textContent.toLowerCase()===f.query.toLowerCase());
+    check(`${kind} match shows correct context`,!!target&&target.textContent.includes(kind==='late'?'Showing matching context':'URL-decoded view'));
+  }
+  el('sample-reset').click();await messageQuery('   ');check('whitespace query does not filter',sampleCount()===14591);
+  await messageQuery('https://');const searchedCount=sampleCount();el('sample-next').click();await messageQuery('http');check('new query resets pagination',el('sample-page-status').textContent.startsWith('1–10'));
+  check('search does not filter charts',total(0)===14591&&searchedCount>10);
+  el('sample-reset').click();sampleInput('sort','oldest');
+  const oldest=el('sample-results').querySelector('.wa-sample-meta').textContent;
+  sampleInput('sort','newest');check('time sorting reverses chronological endpoint',oldest.startsWith('2026-05-24')&&el('sample-results').querySelector('.wa-sample-meta').textContent.startsWith('2026-07-02'));
+  sampleInput('wiki',String(d.wikis.indexOf('dorfwiki')));
+  const collator=new Intl.Collator('en',{numeric:true,sensitivity:'base'});
+  for(const [sort,desc] of [['text-asc',false],['text-desc',true],['page-asc',false],['page-desc',true]]){
+    sampleInput('sort',sort);const values=[...el('sample-results').querySelectorAll(sort.startsWith('text')?'pre':'.wa-sample-name')].map(n=>n.textContent.trim());
+    check(`${sort} produces alphabetical order`,values.length===6&&values.every((v,i)=>i===0||(desc?collator.compare(values[i-1],v)>=0:collator.compare(values[i-1],v)<=0)));
+  }
+  el('sample-reset').click();await messageQuery('<script');check('matching HTML stays inert with highlighting',sampleCount()>0&&el('sample-results').querySelectorAll('script,img,iframe').length===0&&el('sample-results').querySelectorAll('mark').length>0);
+  sampleInput('sort','text-desc');change('summary-user','AgentRelent');el('summary-details').open=true;el('summary-evidence').querySelector('button').click();
+  for(let i=0;i<30&&!el('summary-status').textContent.startsWith('Opened ');i++)await new Promise(resolve=>setTimeout(resolve,10));
+  check('evidence navigation clears search and sort',el('sample-query').value===''&&el('sample-sort').value==='newest'&&el('summary-status').textContent.startsWith('Opened '));
+  el('sample-reset').click();check('reset restores empty search and newest sort',el('sample-query').value===''&&el('sample-sort').value==='newest'&&sampleCount()===14591);
+  check('new search controls fit the panel',[el('sample-query'),el('sample-sort')].every(n=>n.getBoundingClientRect().width<=n.closest('.wa-panel').clientWidth));
+  change('summary-user','ResearchHelper');el('summary-details').open=false;
   sampleInput('wiki',String(d.wikis.indexOf('dorfwiki')));sampleInput('page','dorfwiki/AgentDataUSAProbeFebX2');el('sample-results').querySelector('details').open=true;
+  await messageQuery('api.datausa.io/tesseract');
   check('no runtime errors',!window.qaErrors.length);
 }catch(e){qaResults.push({name:'runtime exception',pass:false,error:String(e)});}
 const report=document.createElement('script');report.id='qa-results';report.type='application/json';report.textContent=JSON.stringify({tests:qaResults,errors:window.qaErrors});document.body.append(report);
 },100);
 </script>
 '''
+harness = harness.replace('__SEARCH_FIXTURES__', json.dumps(fixtures).replace('<', '\\u003c'))
 results = []
 for width, theme in [(360, 'light'), (1024, 'light'), (736, 'light'), (736, 'dark'), (360, 'dark')]:
     if len(sys.argv)>1 and str(width) not in sys.argv[1:]:

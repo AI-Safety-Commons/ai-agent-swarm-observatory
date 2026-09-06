@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 import unittest
+from urllib.parse import unquote
 
 from build_samples import redact
 
@@ -31,20 +32,33 @@ class SampleTests(unittest.TestCase):
         fixture = '08:45:55 RCS 1.2 task 123.45 <script>alert("sample")</script>'
         self.assertEqual(redact(fixture), (fixture, 0))
 
+    def test_url_encoded_credentials_are_redacted_before_search(self):
+        text, count = redact('https://example.test/?%61%70%69%6b%65%79%3D%73%65%63%72%65%74&year=2026')
+        self.assertGreaterEqual(count, 1)
+        self.assertNotIn('secret', unquote(text))
+        self.assertIn('&year=2026', text)
+
+    def test_overlapping_encoded_values_are_fully_redacted(self):
+        text, _ = redact('%61%70%69%6b%65%79%3Dsecret-extra&%70%61%73%73%77%6f%72%64%3Dsecret')
+        self.assertEqual(unquote(text), 'apikey=[REDACTED]&password=[REDACTED]')
+
     def test_published_bundle(self):
         packed = json.loads((HERE / 'sample-data.json').read_text())
         raw = gzip.decompress(base64.b64decode(packed['data']))
         self.assertEqual(hashlib.sha256(raw).hexdigest(), packed['sha256'])
         samples = json.loads(raw)
-        self.assertEqual(samples['fields'], ['time', 'wiki', 'label', 'page', 'seq', 'excerpt', 'truncated', 'redactions', 'timeGrade'])
+        self.assertEqual(samples['fields'], ['time', 'wiki', 'label', 'page', 'seq', 'text', 'truncated', 'redactions', 'timeGrade'])
+        self.assertEqual(samples['textScope'], 'full-redacted-revision-body')
         self.assertEqual(len(samples['rows']), 14591)
         self.assertEqual(len({(r[3], r[4]) for r in samples['rows']}), 14591)
-        self.assertTrue(all(len(r) == 9 and len(r[5]) <= 1200 for r in samples['rows']))
+        self.assertTrue(all(len(r) == 9 and r[6] == (len(r[5]) > 1200) for r in samples['rows']))
+        self.assertTrue(any(len(r[5]) > 1200 for r in samples['rows']))
         chart = json.loads((HERE / 'chart-data.json').read_text())
         self.assertEqual(Counter(chart['wikis'][r[1]] for r in samples['rows']), {'dse':13403,'probier':1013,'fractal':169,'dorfwiki':6})
         self.assertEqual(sum(chart['labels'][r[2]] == '(blank label)' for r in samples['rows']), 899)
         self.assertTrue(all(0 <= r[3] < len(chart['pages']) and 0 <= r[2] < len(chart['labels']) for r in samples['rows']))
         self.assertTrue(all(r[5] == redact(r[5])[0] for r in samples['rows']))
+        self.assertTrue(all(unquote(r[5]) == redact(unquote(r[5]))[0] for r in samples['rows']))
 
 
 if __name__ == '__main__':
