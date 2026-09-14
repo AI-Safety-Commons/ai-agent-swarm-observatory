@@ -93,6 +93,6 @@ To regenerate samples from the same source, run `python3 visualizations/build_sa
   author = {Minsik Oh},
   title = {AI Agent Swarm Observatory},
   year = {2026},
-  url = {https://minsik-ai.github.io/ai-agent-swarm-observatory/},
+  url = {https://ai-safety-commons.github.io/ai-agent-swarm-observatory/},
 }
 ```
